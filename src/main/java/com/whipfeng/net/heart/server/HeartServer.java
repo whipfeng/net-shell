@@ -1,5 +1,6 @@
 package com.whipfeng.net.heart.server;
 
+import com.whipfeng.net.heart.CustomHeartbeatEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -30,6 +31,7 @@ public class HeartServer {
                             ChannelPipeline p = ch.pipeline();
                             p.addLast(new IdleStateHandler(10, 0, 0));
                             p.addLast(new LengthFieldBasedFrameDecoder(1024, 0, 4, -4, 0));
+                            p.addLast(new CustomHeartbeatEncoder("Server"));
                             p.addLast(new HeartServerHandler());
                         }
                     })
