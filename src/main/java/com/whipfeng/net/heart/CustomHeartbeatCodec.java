@@ -2,67 +2,75 @@ package com.whipfeng.net.heart;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.handler.codec.ByteToMessageCodec;
+import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * Created by fz on 2018/11/20.
  */
-public class CustomHeartbeatEncoder extends MessageToByteEncoder<ByteBuf> {
+public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
 
-    private static final Logger logger = LoggerFactory.getLogger(CustomHeartbeatEncoder.class);
+    private static final Logger logger = LoggerFactory.getLogger(CustomHeartbeatCodec.class);
+
+    private static final byte HEAD_LEN = 5;
 
     private static final byte PING_MSG = 1;
     private static final byte PONG_MSG = 2;
     private static final byte CUSTOM_MSG = 3;
+
     protected String name;
     private int heartbeatCount = 0;
 
-    public CustomHeartbeatEncoder(String name) {
+    public CustomHeartbeatCodec(String name) {
         this.name = name;
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof ByteBuf) {
-            ByteBuf in = (ByteBuf) msg;
-            byte b = in.getByte(4);
-            if (b == PING_MSG) {
-                sendPongMsg(ctx);
-            } else if (b == PONG_MSG) {
-                logger.debug(name + "<-获取PONG从：" + ctx.channel().remoteAddress());
-            } else {
-                in.skipBytes(5);
-                ctx.fireChannelRead(in);
-            }
-        } else {
-            ctx.fireChannelRead(msg);
-        }
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        logger.debug("已连接：" + ctx.channel().remoteAddress());
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        logger.debug("已断开：" + ctx.channel().remoteAddress());
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("异常断开：" + ctx.channel().remoteAddress(), cause);
-        ctx.close();
-    }
-
-    @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
-        out.writeInt(5 + in.readableBytes());
+        out.writeInt(in.readableBytes());
         out.writeByte(CUSTOM_MSG);
         out.writeBytes(in);
+    }
+
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        if (in.readableBytes() < HEAD_LEN) {
+            return;
+        }
+        in.markReaderIndex();
+        int len = in.readInt();
+        byte flag = in.readByte();
+
+        //发送ping,返回pong
+        if (PING_MSG == flag) {
+            sendPongMsg(ctx);
+            return;
+        }
+
+        //收到pong，打印后丢弃
+        if (PONG_MSG == flag) {
+            logger.debug(name + "Response 'PONG' from: " + ctx.channel().remoteAddress());
+            return;
+        }
+
+        //收到应用消息
+        if (CUSTOM_MSG == flag) {
+            if (in.readableBytes() < len) {
+                in.resetReaderIndex();
+                return;
+            }
+            ByteBuf frame = ctx.alloc().buffer(len);
+            frame.writeBytes(in, len);
+            out.add(frame);
+            return;
+        }
+
+        throw new CorruptedFrameException("Unsupported flag: " + flag);
     }
 
     @Override
@@ -84,8 +92,8 @@ public class CustomHeartbeatEncoder extends MessageToByteEncoder<ByteBuf> {
     }
 
     private void sendPingMsg(ChannelHandlerContext ctx) {
-        ByteBuf out = ctx.alloc().buffer(5);
-        out.writeInt(5);
+        ByteBuf out = ctx.alloc().buffer(HEAD_LEN);
+        out.writeInt(0);
         out.writeByte(PING_MSG);
         ctx.writeAndFlush(out);
         heartbeatCount++;
@@ -93,8 +101,8 @@ public class CustomHeartbeatEncoder extends MessageToByteEncoder<ByteBuf> {
     }
 
     private void sendPongMsg(ChannelHandlerContext ctx) {
-        ByteBuf out = ctx.alloc().buffer(5);
-        out.writeInt(5);
+        ByteBuf out = ctx.alloc().buffer(HEAD_LEN);
+        out.writeInt(0);
         out.writeByte(PONG_MSG);
         ctx.writeAndFlush(out);
         heartbeatCount++;
