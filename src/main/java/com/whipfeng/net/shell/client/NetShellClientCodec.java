@@ -4,8 +4,12 @@ import com.whipfeng.net.heart.CustomHeartbeatCodec;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.CorruptedFrameException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.BlockingQueue;
 
 /**
  * 网络外壳客户端编解码器
@@ -13,53 +17,75 @@ import io.netty.handler.codec.CorruptedFrameException;
  */
 public class NetShellClientCodec extends CustomHeartbeatCodec {
 
+    private static final Logger logger = LoggerFactory.getLogger(NetShellClientCodec.class);
+
     private static final byte CONN_REQ_MSG = 4;
     private static final byte CONN_ACK_MSG = 5;
 
+    private BlockingQueue<NetShellClientCodec> blockingQueue;
     private String inHost;
     private int inPort;
 
-    public NetShellClientCodec(String inHost, int inPort) {
+    public NetShellClientCodec(BlockingQueue<NetShellClientCodec> blockingQueue, String inHost, int inPort) {
         super("NS-Client");
+        this.blockingQueue = blockingQueue;
         this.inHost = inHost;
         this.inPort = inPort;
     }
 
     @Override
-    protected void decode(final ChannelHandlerContext ctx, byte flag) throws Exception {
+    protected void decode(final ChannelHandlerContext nsCtx, byte flag) throws Exception {
         //请求连接
         if (CONN_REQ_MSG == flag) {
+            logger.debug(name + " Received 'CONN_REQ' from: " + nsCtx.channel().remoteAddress());
+
+            boolean result = blockingQueue.remove(this);
+            logger.info(result + " Finish Connect:" + nsCtx.channel().localAddress());
+
             Bootstrap inBootstrap = new Bootstrap();
-            inBootstrap.group(ctx.channel().eventLoop().parent())
+            inBootstrap.group(nsCtx.channel().eventLoop().parent())
                     .channel(NioSocketChannel.class)
                     .option(ChannelOption.SO_KEEPALIVE, true)
-                    .option(ChannelOption.AUTO_READ, false);
+                    .option(ChannelOption.AUTO_READ, false)
+                    .handler(new ChannelInitializer<SocketChannel>() {
+                        public void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline()
+                                    .addLast(new MsgExchangeHandler(nsCtx.channel()));
+                        }
+                    });
             ChannelFuture inFuture = inBootstrap.remoteAddress(inHost, inPort).connect();
 
             //异步等待连接结果
             inFuture.addListener(new ChannelFutureListener() {
-                public void operationComplete(ChannelFuture future) {
-                    if (future.isSuccess()) {
-                        Channel channel = future.channel();
-                        ctx.pipeline().addLast(new MsgExchangeHandler(channel));
-                        channel.pipeline().addLast(new MsgExchangeHandler(ctx.channel()));
+                public void operationComplete(ChannelFuture inFuture) {
+                    if (inFuture.isSuccess()) {
+                        Channel inChannel = inFuture.channel();
+                        Channel nsChannel = nsCtx.channel();
+                        nsCtx.pipeline().addLast(new MsgExchangeHandler(inChannel));
                         //响应连接
-                        sendFlagMsg(ctx, CONN_ACK_MSG);
-                        channel.config().setAutoRead(true);
-                        channel.read();
+                        sendFlagMsg(nsCtx, CONN_ACK_MSG);
+                        inChannel.config().setAutoRead(true);
+                        inChannel.read();
 
                         //如果外壳网络已经挂了，则直接关闭内部网络
-                        if (!ctx.channel().isActive()) {
-                            channel.close();
+                        if (!nsChannel.isActive()) {
+                            inChannel.close();
                         }
                     } else {
                         //如果内部网络没成功，则直接关闭外壳网络
-                        ctx.close();
+                        nsCtx.close();
                     }
                 }
             });
             return;
         }
-        super.decode(ctx, flag);
+        super.decode(nsCtx, flag);
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+        boolean result = blockingQueue.remove(this);
+        logger.info(result + " Lost Connect:" + ctx.channel().localAddress());
+        ctx.fireChannelInactive();
     }
 }

@@ -1,7 +1,5 @@
 package com.whipfeng.net.shell.server;
 
-import com.whipfeng.net.heart.CustomHeartbeatCodec;
-import com.whipfeng.net.heart.server.HeartServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -16,6 +14,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 public class NetShellServer {
     private int nsPort;
     private int outPort;
+    private ChannelBondQueue bondQueue = new ChannelBondQueue();
 
     public NetShellServer(int nsPort, int outPort) {
         this.nsPort = nsPort;
@@ -25,34 +24,35 @@ public class NetShellServer {
     public void run() throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+
         try {
             ServerBootstrap nsBootstrap = new ServerBootstrap();
             nsBootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
+                    .option(ChannelOption.SO_BACKLOG, 128)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ChannelPipeline p = ch.pipeline();
-                            p.addLast(new IdleStateHandler(10, 0, 0));
-                            p.addLast(new CustomHeartbeatCodec("NS-Server"));
-                            p.addLast(new HeartServerHandler());
+                            ch.pipeline()
+                                    .addLast(new IdleStateHandler(10, 0, 0))
+                                    .addLast(new NetShellServerCodec(bondQueue));
                         }
-                    })
-                    .option(ChannelOption.SO_BACKLOG, 128)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true);
+                    });
 
             ChannelFuture nsFuture = nsBootstrap.bind(nsPort).sync();
 
             ServerBootstrap outBootstrap = new ServerBootstrap();
             outBootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        public void initChannel(SocketChannel ch) throws Exception {
-                            ChannelPipeline p = ch.pipeline();
-                        }
-                    })
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
-                    .childOption(ChannelOption.AUTO_READ, false);
+                    .childOption(ChannelOption.AUTO_READ, false)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        public void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline()
+                                    .addLast(new ChannelBondHandler(bondQueue));
+                        }
+                    });
 
             ChannelFuture outFuture = outBootstrap.bind(outPort).sync();
 

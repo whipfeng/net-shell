@@ -20,6 +20,10 @@ public class MsgExchangeHandler extends ChannelHandlerAdapter {
         this.channel = channel;
     }
 
+    public Channel getChannel() {
+        return this.channel;
+    }
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         channel.writeAndFlush(msg);

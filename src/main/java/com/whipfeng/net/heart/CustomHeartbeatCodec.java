@@ -49,7 +49,11 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
 
         //发送ping,返回pong
         if (PING_MSG == flag) {
+            logger.debug(name + " Received 'PING' from: " + ctx.channel().remoteAddress());
             sendFlagMsg(ctx, PONG_MSG);
+            heartbeatCount++;
+            logger.debug(name + " Send 'PONG' to: " + ctx.channel().remoteAddress()
+                    + ",HeartbeatCount:" + heartbeatCount);
             return;
         }
 
@@ -61,6 +65,10 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
 
         //收到应用消息
         if (CUSTOM_MSG == flag) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(name + " Received 'CUSTOM' from: " + ctx.channel().remoteAddress()
+                        + ",len:" + in.readableBytes());
+            }
             if (in.readableBytes() < len) {
                 in.resetReaderIndex();
                 return;
@@ -94,9 +102,10 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
                     break;
             }
         }
+        ctx.fireUserEventTriggered(evt);
     }
 
-    protected ChannelFuture sendFlagMsg(ChannelHandlerContext ctx, byte flag) {
+    public ChannelFuture sendFlagMsg(ChannelHandlerContext ctx, byte flag) {
         ByteBuf out = ctx.alloc().buffer(HEAD_LEN);
         out.writeInt(0);
         out.writeByte(flag);
@@ -114,12 +123,10 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
     protected void handleReaderIdle(ChannelHandlerContext ctx) {
         logger.debug("Read timeout:" + ctx.channel().remoteAddress());
         ctx.close();
-        ctx.fireChannelInactive();
     }
 
     protected void handleWriterIdle(ChannelHandlerContext ctx) {
         logger.debug("Write timeout:" + ctx.channel().remoteAddress());
         ctx.close();
-        ctx.fireChannelInactive();
     }
 }

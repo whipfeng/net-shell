@@ -9,6 +9,7 @@ import io.netty.channel.ChannelHandlerContext;
  * @时间:2017-4-8下午12:07:50
  */
 public class EchoServerHandler extends ChannelHandlerAdapter {
+    int count = 0;
     /*
      * @作者:CJY
      * @说明:该方法用于接收从客户端接收的信息
@@ -28,6 +29,10 @@ public class EchoServerHandler extends ChannelHandlerAdapter {
         ctx.write(msg);
         ctx.flush();
         System.out.println(Thread.currentThread().getName());
+        count++;
+        if (count > 5) {
+            ctx.close();
+        }
         //你可以直接使用writeAndFlush(msg)
         //ctx.writeAndFlush(msg);
     }
@@ -35,7 +40,13 @@ public class EchoServerHandler extends ChannelHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
             throws Exception {
-        cause.printStackTrace();
-        ctx.close();
+        System.out.println(cause.getMessage());
+        ////ctx.close();
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+        System.out.println("I am lose!!!" + ctx.channel().remoteAddress());
+        ctx.fireChannelInactive();
     }
 }
