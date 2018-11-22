@@ -1,6 +1,7 @@
 package com.whipfeng.net.heart;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.CorruptedFrameException;
@@ -19,12 +20,12 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
 
     private static final byte HEAD_LEN = 5;
 
-    private static final byte PING_MSG = 1;
-    private static final byte PONG_MSG = 2;
-    private static final byte CUSTOM_MSG = 3;
+    protected static final byte PING_MSG = 1;
+    protected static final byte PONG_MSG = 2;
+    protected static final byte CUSTOM_MSG = 3;
 
     protected String name;
-    private int heartbeatCount = 0;
+    protected int heartbeatCount = 0;
 
     public CustomHeartbeatCodec(String name) {
         this.name = name;
@@ -48,13 +49,13 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
 
         //发送ping,返回pong
         if (PING_MSG == flag) {
-            sendPongMsg(ctx);
+            sendFlagMsg(ctx, PONG_MSG);
             return;
         }
 
         //收到pong，打印后丢弃
         if (PONG_MSG == flag) {
-            logger.debug(name + "Response 'PONG' from: " + ctx.channel().remoteAddress());
+            logger.debug(name + " Received 'PONG' from: " + ctx.channel().remoteAddress());
             return;
         }
 
@@ -70,6 +71,10 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
             return;
         }
 
+        decode(ctx, flag);
+    }
+
+    protected void decode(ChannelHandlerContext ctx, byte flag) throws Exception {
         throw new CorruptedFrameException("Unsupported flag: " + flag);
     }
 
@@ -91,37 +96,29 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
         }
     }
 
-    private void sendPingMsg(ChannelHandlerContext ctx) {
+    protected ChannelFuture sendFlagMsg(ChannelHandlerContext ctx, byte flag) {
         ByteBuf out = ctx.alloc().buffer(HEAD_LEN);
         out.writeInt(0);
-        out.writeByte(PING_MSG);
-        ctx.writeAndFlush(out);
+        out.writeByte(flag);
+        return ctx.writeAndFlush(out);
+    }
+
+    protected void handleAllIdle(ChannelHandlerContext ctx) {
+        logger.debug("Wait timeout:" + ctx.channel().remoteAddress());
+        sendFlagMsg(ctx, PING_MSG);
         heartbeatCount++;
-        logger.debug(name + "->发送PING到：" + ctx.channel().remoteAddress() + "，总数：" + heartbeatCount);
+        logger.debug(name + " Send 'PING' to: " + ctx.channel().remoteAddress()
+                + ",HeartbeatCount:" + heartbeatCount);
     }
 
-    private void sendPongMsg(ChannelHandlerContext ctx) {
-        ByteBuf out = ctx.alloc().buffer(HEAD_LEN);
-        out.writeInt(0);
-        out.writeByte(PONG_MSG);
-        ctx.writeAndFlush(out);
-        heartbeatCount++;
-        logger.debug(name + "->发送PONG到：" + ctx.channel().remoteAddress() + "，总数：" + heartbeatCount);
-    }
-
-    private void handleAllIdle(ChannelHandlerContext ctx) {
-        logger.debug("等超时：" + ctx.channel().remoteAddress());
-        sendPingMsg(ctx);
-    }
-
-    private void handleReaderIdle(ChannelHandlerContext ctx) {
-        logger.debug("读超时：" + ctx.channel().remoteAddress());
+    protected void handleReaderIdle(ChannelHandlerContext ctx) {
+        logger.debug("Read timeout:" + ctx.channel().remoteAddress());
         ctx.close();
         ctx.fireChannelInactive();
     }
 
-    private void handleWriterIdle(ChannelHandlerContext ctx) {
-        logger.debug("写超时：" + ctx.channel().remoteAddress());
+    protected void handleWriterIdle(ChannelHandlerContext ctx) {
+        logger.debug("Write timeout:" + ctx.channel().remoteAddress());
         ctx.close();
         ctx.fireChannelInactive();
     }
