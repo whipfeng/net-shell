@@ -58,7 +58,8 @@ public class NetShellClientCodec extends CustomHeartbeatCodec {
                     }
                 }
             });
+            return;
         }
-        throw new CorruptedFrameException("Unsupported flag: " + flag);
+        super.decode(ctx, flag);
     }
 }
