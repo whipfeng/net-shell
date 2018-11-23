@@ -61,14 +61,4 @@ public class EchoServer {
             workerGroup.shutdownGracefully();
         }
     }
-
-    public static void main(String[] args) {
-        int port = 8088;
-        try {
-            new EchoServer(port).run();
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
 }

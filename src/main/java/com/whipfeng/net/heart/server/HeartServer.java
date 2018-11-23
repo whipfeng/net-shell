@@ -42,9 +42,4 @@ public class HeartServer {
             workerGroup.shutdownGracefully();
         }
     }
-
-    public static void main(String[] args) throws Exception {
-        int port = 8088;
-        new HeartServer(port).run();
-    }
 }

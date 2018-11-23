@@ -58,10 +58,4 @@ public class HeartClient {
             workerGroup.shutdownGracefully();
         }
     }
-
-    public static void main(String[] args) throws Exception {
-        String hostName = "localhost";
-        int port = 8088;
-        new HeartClient(hostName, port).run();
-    }
 }

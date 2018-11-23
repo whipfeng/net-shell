@@ -63,14 +63,4 @@ public class DiscardServer {
             workerGroup.shutdownGracefully();
         }
     }
-
-    public static void main(String[] args) {
-        int port = 8088;
-        try {
-            new DiscardServer(port).run();
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
 }

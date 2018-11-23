@@ -1,6 +1,5 @@
 package com.whipfeng.net.shell.server;
 
-import com.whipfeng.util.ArgsUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -83,19 +82,5 @@ public class NetShellServer {
     public void shutdown() {
         bossGroup.shutdownGracefully();
         workerGroup.shutdownGracefully();
-    }
-
-    public static void main(String args[]) throws Exception {
-        logger.info("");
-        logger.info("------------------------我是分隔符------------------------");
-
-        ArgsUtil argsUtil = new ArgsUtil(args);
-        int nsPort = argsUtil.get("-nsPort", 8088);
-        int outPort = argsUtil.get("-outPort", 9099);
-        logger.info("nsPort=" + nsPort);
-        logger.info("outPort=" + outPort);
-
-        NetShellServer netShellServer = new NetShellServer(nsPort, outPort);
-        netShellServer.run();
     }
 }
