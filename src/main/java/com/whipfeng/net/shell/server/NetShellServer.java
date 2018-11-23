@@ -1,20 +1,28 @@
 package com.whipfeng.net.shell.server;
 
+import com.whipfeng.util.ArgsUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 网络外壳服务端，监听外部网络和外壳网络
  * Created by fz on 2018/11/19.
  */
 public class NetShellServer {
+
+    private static final Logger logger = LoggerFactory.getLogger(NetShellServer.class);
+
     private int nsPort;
     private int outPort;
     private ChannelBondQueue bondQueue = new ChannelBondQueue();
+    private EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+    private EventLoopGroup workerGroup = new NioEventLoopGroup();
 
     public NetShellServer(int nsPort, int outPort) {
         this.nsPort = nsPort;
@@ -22,9 +30,6 @@ public class NetShellServer {
     }
 
     public void run() throws Exception {
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
-
         try {
             ServerBootstrap nsBootstrap = new ServerBootstrap();
             nsBootstrap.group(bossGroup, workerGroup)
@@ -56,17 +61,41 @@ public class NetShellServer {
 
             ChannelFuture outFuture = outBootstrap.bind(outPort).sync();
 
-            nsFuture.channel().closeFuture().sync();
-            outFuture.channel().closeFuture().sync();
+            ChannelFuture nsClose = nsFuture.channel().closeFuture();
+            ChannelFuture outClose = outFuture.channel().closeFuture();
+            ChannelFutureListener closeListener = new ChannelFutureListener() {
+                public void operationComplete(ChannelFuture future) {
+                    if (!future.isSuccess()) {
+                        logger.error("Listener fail, will stop.", future.cause());
+                    }
+                    shutdown();
+                }
+            };
+            nsClose.addListener(closeListener);
+            outClose.addListener(closeListener);
+            nsClose.sync();
+            outClose.sync();
         } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
+            shutdown();
         }
     }
 
+    public void shutdown() {
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+    }
+
     public static void main(String args[]) throws Exception {
-        int nsPort = 8088;
-        int outPort = 9099;
-        new NetShellServer(nsPort, outPort).run();
+        logger.info("");
+        logger.info("------------------------我是分隔符------------------------");
+
+        ArgsUtil argsUtil = new ArgsUtil(args);
+        int nsPort = argsUtil.get("-nsPort", 8088);
+        int outPort = argsUtil.get("-outPort", 9099);
+        logger.info("nsPort=" + nsPort);
+        logger.info("outPort=" + outPort);
+
+        NetShellServer netShellServer = new NetShellServer(nsPort, outPort);
+        netShellServer.run();
     }
 }

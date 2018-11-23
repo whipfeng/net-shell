@@ -1,5 +1,6 @@
 package com.whipfeng.net.shell.client;
 
+import com.whipfeng.util.ArgsUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -73,12 +74,22 @@ public class NetShellClient {
     }
 
     public static void main(String[] args) throws Exception {
-        String nsHost = "localhost";
-        int nsPort = 8088;
+        logger.info("");
+        logger.info("------------------------我是分隔符------------------------");
 
-        String inHost = "10.21.20.229";
-        int inPort = 22;
+        ArgsUtil argsUtil = new ArgsUtil(args);
+        String nsHost = argsUtil.get("-nsHost", "localhost");
+        int nsPort = argsUtil.get("-nsPort", 8088);
 
-        new NetShellClient(nsHost, nsPort, inHost, inPort).run();
+        String inHost = argsUtil.get("-inHost", "10.21.20.229");
+        int inPort = argsUtil.get("-inPort", 22);
+
+        logger.info("nsHost=" + nsHost);
+        logger.info("nsPort=" + nsPort);
+        logger.info("inHost=" + inHost);
+        logger.info("inPort=" + inPort);
+
+        NetShellClient netShellClient = new NetShellClient(nsHost, nsPort, inHost, inPort);
+        netShellClient.run();
     }
 }
