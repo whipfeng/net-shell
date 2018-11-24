@@ -1,6 +1,7 @@
 package com.whipfeng.net;
 
 import com.whipfeng.net.shell.client.NetShellClient;
+import com.whipfeng.net.shell.proxy.NetShellProxy;
 import com.whipfeng.net.shell.server.NetShellServer;
 import org.junit.Test;
 
@@ -28,5 +29,15 @@ public class NetShellTest {
 
         NetShellClient netShellClient = new NetShellClient(nsHost, nsPort, inHost, inPort);
         netShellClient.run();
+    }
+
+    @Test
+    public void testNetShellProxy() throws Exception {
+        int proxyPort = 9099;
+        String outHost = "10.19.18.50";
+        int outPort = 19666;
+
+        NetShellProxy netShellProxy = new NetShellProxy(proxyPort, outHost, outPort);
+        netShellProxy.run();
     }
 }

@@ -1,6 +1,7 @@
 package com.whipfeng.net.shell;
 
 import com.whipfeng.net.shell.client.NetShellClient;
+import com.whipfeng.net.shell.proxy.NetShellProxy;
 import com.whipfeng.net.shell.server.NetShellServer;
 import com.whipfeng.util.ArgsUtil;
 import org.slf4j.Logger;
@@ -23,10 +24,20 @@ public class NetShellStarter {
         logger.info("m=" + mode);
 
         /**
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy -proxyPort 9099 -outHost 10.19.18.50 -outPort 19666
          * java -jar net-shell-1.0-SNAPSHOT.jar -m server -nsPort 8808 -outPort 9099
          * java -jar net-shell-1.0-SNAPSHOT.jar -m client -nsHost localhost -nsPort 8808 -inHost 10.21.20.229 -inPort 22
          */
-        if ("server".equals(mode)) {
+        if ("proxy".equals(mode)) {
+            int proxyPort = argsUtil.get("-proxyPort", 9099);
+            String outHost = argsUtil.get("-outHost", "10.19.18.50");;
+            int outPort = argsUtil.get("-outPort", 19666);
+            logger.info("proxyPort=" + proxyPort);
+            logger.info("outHost=" + outHost);
+            logger.info("outPort=" + outPort);
+            NetShellProxy netShellProxy = new NetShellProxy(proxyPort, outHost, outPort);
+            netShellProxy.run();
+        } else if ("server".equals(mode)) {
             int nsPort = argsUtil.get("-nsPort", 8088);
             int outPort = argsUtil.get("-outPort", 9099);
             logger.info("nsPort=" + nsPort);
