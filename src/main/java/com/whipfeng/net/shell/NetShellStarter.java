@@ -22,6 +22,10 @@ public class NetShellStarter {
         String mode = argsUtil.get("-m", "client");
         logger.info("m=" + mode);
 
+        /**
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m server -nsPort 8808 -outPort 9099
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m client -nsHost localhost -nsPort 8808 -inHost 10.21.20.229 -inPort 22
+         */
         if ("server".equals(mode)) {
             int nsPort = argsUtil.get("-nsPort", 8088);
             int outPort = argsUtil.get("-outPort", 9099);

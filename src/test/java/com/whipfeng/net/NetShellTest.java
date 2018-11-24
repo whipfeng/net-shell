@@ -21,7 +21,7 @@ public class NetShellTest {
     @Test
     public void testNetShellClient() throws Exception {
         String nsHost = "localhost";
-        int nsPort = 8088;
+        int nsPort = 8808;
 
         String inHost = "10.21.20.229";
         int inPort = 22;
