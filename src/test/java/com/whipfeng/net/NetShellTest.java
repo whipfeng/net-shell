@@ -2,6 +2,8 @@ package com.whipfeng.net;
 
 import com.whipfeng.net.shell.client.NetShellClient;
 import com.whipfeng.net.shell.proxy.NetShellProxy;
+import com.whipfeng.net.shell.proxy.PasswordAuth;
+import com.whipfeng.net.shell.transfer.NetShellTransfer;
 import com.whipfeng.net.shell.server.NetShellServer;
 import org.junit.Test;
 
@@ -33,11 +35,36 @@ public class NetShellTest {
 
     @Test
     public void testNetShellProxy() throws Exception {
+        String nsHost = "localhost";
+        int nsPort = 8088;
+
+        NetShellProxy netShellProxy = new NetShellProxy(nsHost, nsPort, false, null);
+        netShellProxy.run();
+    }
+
+    @Test
+    public void testNetShellProxyWithAuth() throws Exception {
+        String nsHost = "localhost";
+        int nsPort = 8088;
+
+        PasswordAuth pa = new PasswordAuth() {
+            @Override
+            public boolean auth(String user, String password) {
+                return "test123".equals(user) && "test123".equals(password);
+            }
+        };
+
+        NetShellProxy netShellProxy = new NetShellProxy(nsHost, nsPort, true, pa);
+        netShellProxy.run();
+    }
+
+    @Test
+    public void testNetShellTransfer() throws Exception {
         int proxyPort = 9099;
         String outHost = "10.19.18.50";
         int outPort = 19666;
 
-        NetShellProxy netShellProxy = new NetShellProxy(proxyPort, outHost, outPort);
+        NetShellTransfer netShellProxy = new NetShellTransfer(proxyPort, outHost, outPort);
         netShellProxy.run();
     }
 }

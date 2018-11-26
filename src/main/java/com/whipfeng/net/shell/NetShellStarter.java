@@ -2,10 +2,17 @@ package com.whipfeng.net.shell;
 
 import com.whipfeng.net.shell.client.NetShellClient;
 import com.whipfeng.net.shell.proxy.NetShellProxy;
+import com.whipfeng.net.shell.proxy.PasswordAuth;
+import com.whipfeng.net.shell.transfer.NetShellTransfer;
 import com.whipfeng.net.shell.server.NetShellServer;
 import com.whipfeng.util.ArgsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.misc.IOUtils;
+
+import java.io.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 网络外壳服务端，监听外部网络和外壳网络
@@ -24,27 +31,20 @@ public class NetShellStarter {
         logger.info("m=" + mode);
 
         /**
-         * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy -proxyPort 9099 -outHost 10.19.18.50 -outPort 19666
+         *
          * java -jar net-shell-1.0-SNAPSHOT.jar -m server -nsPort 8808 -outPort 9099
          * java -jar net-shell-1.0-SNAPSHOT.jar -m client -nsHost localhost -nsPort 8808 -inHost 10.21.20.229 -inPort 22
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy -nsHost localhost -nsPort 8808 -needAuth true -authFilePath E:\workspace_myself\net-shell\target\AuthList.txt
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m transfer -tsfPort 9099 -outHost 10.19.18.50 -outPort 19666
          */
-        if ("proxy".equals(mode)) {
-            int proxyPort = argsUtil.get("-proxyPort", 9099);
-            String outHost = argsUtil.get("-outHost", "10.19.18.50");;
-            int outPort = argsUtil.get("-outPort", 19666);
-            logger.info("proxyPort=" + proxyPort);
-            logger.info("outHost=" + outHost);
-            logger.info("outPort=" + outPort);
-            NetShellProxy netShellProxy = new NetShellProxy(proxyPort, outHost, outPort);
-            netShellProxy.run();
-        } else if ("server".equals(mode)) {
+        if ("server".equals(mode)) {
             int nsPort = argsUtil.get("-nsPort", 8088);
             int outPort = argsUtil.get("-outPort", 9099);
             logger.info("nsPort=" + nsPort);
             logger.info("outPort=" + outPort);
             NetShellServer netShellServer = new NetShellServer(nsPort, outPort);
             netShellServer.run();
-        } else {
+        } else if ("client".equals(mode)) {
             String nsHost = argsUtil.get("-nsHost", "localhost");
             int nsPort = argsUtil.get("-nsPort", 8088);
 
@@ -58,6 +58,49 @@ public class NetShellStarter {
 
             NetShellClient netShellClient = new NetShellClient(nsHost, nsPort, inHost, inPort);
             netShellClient.run();
+        } else if ("proxy".equals(mode)) {
+            String nsHost = argsUtil.get("-nsHost", "localhost");
+            int nsPort = argsUtil.get("-nsPort", 8088);
+
+            boolean isNeedAuth = argsUtil.get("-needAuth", false);
+            final String authFilePath = argsUtil.get("-authFilePath", null);
+
+            logger.info("nsHost=" + nsHost);
+            logger.info("nsPort=" + nsPort);
+            logger.info("isNeedAuth=" + isNeedAuth);
+            logger.info("authFilePath=" + authFilePath);
+
+            final Set<String> authSet = new HashSet<String>();
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(authFilePath)));
+            try {
+                String line;
+                while (null != (line = br.readLine())) {
+                    authSet.add(line);
+                }
+            } finally {
+                br.close();
+            }
+
+            PasswordAuth passwordAuth = new PasswordAuth() {
+                @Override
+                public boolean auth(String user, String password) {
+                    String up = user + "/" + password;
+                    return authSet.contains(up);
+                }
+            };
+
+            NetShellProxy netShellProxy = new NetShellProxy(nsHost, nsPort, isNeedAuth, passwordAuth);
+            netShellProxy.run();
+        } else {
+            int tsfPort = argsUtil.get("-tsfPort", 9099);
+            String outHost = argsUtil.get("-outHost", "10.19.18.50");
+            ;
+            int outPort = argsUtil.get("-outPort", 19666);
+            logger.info("tsfPort=" + tsfPort);
+            logger.info("outHost=" + outHost);
+            logger.info("outPort=" + outPort);
+            NetShellTransfer netShellTransfer = new NetShellTransfer(tsfPort, outHost, outPort);
+            netShellTransfer.run();
         }
     }
 }

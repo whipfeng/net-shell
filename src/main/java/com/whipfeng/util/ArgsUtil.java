@@ -26,6 +26,14 @@ public class ArgsUtil {
         return Integer.valueOf(val);
     }
 
+    public boolean get(String key, boolean defaultVal) {
+        String val = argMap.get(key);
+        if (null == val) {
+            return defaultVal;
+        }
+        return Boolean.valueOf(val);
+    }
+
     public String get(String key, String defaultVal) {
         String val = argMap.get(key);
         if (null == val) {

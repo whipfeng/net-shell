@@ -1,4 +1,4 @@
-package com.whipfeng.net.shell.proxy;
+package com.whipfeng.net.shell.transfer;
 
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import io.netty.bootstrap.Bootstrap;
@@ -12,14 +12,14 @@ import org.slf4j.LoggerFactory;
  * 代理转发器组装
  * Created by fz on 2018/11/22.
  */
-public class NetShellProxyHandler extends ChannelHandlerAdapter {
+public class NetShellTransferHandler extends ChannelHandlerAdapter {
 
-    private static final Logger logger = LoggerFactory.getLogger(NetShellProxyHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetShellTransferHandler.class);
 
     private String outHost;
     private int outPort;
 
-    public NetShellProxyHandler(String outHost, int outPort) {
+    public NetShellTransferHandler(String outHost, int outPort) {
         this.outHost = outHost;
         this.outPort = outPort;
     }
