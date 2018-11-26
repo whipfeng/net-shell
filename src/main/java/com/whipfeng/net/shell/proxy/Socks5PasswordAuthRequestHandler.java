@@ -25,14 +25,17 @@ public class Socks5PasswordAuthRequestHandler extends SimpleChannelInboundHandle
 
     @Override
     protected void messageReceived(ChannelHandlerContext ctx, DefaultSocks5PasswordAuthRequest msg) throws Exception {
-        logger.debug("Login user info: " + msg.username() + "," + msg.password());
-        if (passwordAuth.auth(msg.username(), msg.password())) {
+        logger.info("Login user info: " + msg);
+
+        if (msg.decoderResult().isSuccess() && passwordAuth.auth(msg.username(), msg.password())) {
             Socks5PasswordAuthResponse passwordAuthResponse = new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS);
             ctx.writeAndFlush(passwordAuthResponse);
-        } else {
-            Socks5PasswordAuthResponse passwordAuthResponse = new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.FAILURE);
-            //发送鉴权失败消息，完成后关闭channel
-            ctx.writeAndFlush(passwordAuthResponse).addListener(ChannelFutureListener.CLOSE);
+            return;
         }
+
+        logger.warn("Auth fail:" + msg.username() + ", " + msg.password());
+        Socks5PasswordAuthResponse passwordAuthResponse = new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.FAILURE);
+        //发送鉴权失败消息，完成后关闭channel
+        ctx.writeAndFlush(passwordAuthResponse).addListener(ChannelFutureListener.CLOSE);
     }
 }

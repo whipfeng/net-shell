@@ -18,8 +18,8 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
 
     @Override
     protected void messageReceived(final ChannelHandlerContext nsCtx, final DefaultSocks5CommandRequest msg) throws Exception {
-        logger.info("Dest Server:" + msg.type() + "," + msg.dstAddr() + "," + msg.dstPort());
-        if (msg.type().equals(Socks5CommandType.CONNECT)) {
+        logger.info("Dest Server:" + msg);
+        if (msg.decoderResult().isSuccess() && msg.type().equals(Socks5CommandType.CONNECT)) {
             logger.trace("Connect prepare:" + msg);
 
             Bootstrap bootstrap = new Bootstrap();
@@ -58,8 +58,10 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                     }
                 }
             });
-        } else {
-            nsCtx.fireChannelRead(msg);
+            return;
         }
+
+        logger.warn("Wrong command type:" + msg);
+        nsCtx.close();
     }
 }
