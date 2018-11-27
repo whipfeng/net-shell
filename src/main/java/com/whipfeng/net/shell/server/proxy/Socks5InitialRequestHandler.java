@@ -1,4 +1,4 @@
-package com.whipfeng.net.shell.proxy;
+package com.whipfeng.net.shell.server.proxy;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

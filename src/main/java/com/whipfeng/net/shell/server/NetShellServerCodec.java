@@ -16,9 +16,9 @@ public class NetShellServerCodec extends CustomHeartbeatCodec {
 
     public static final byte CONN_REQ_MSG = 4;
     public static final byte CONN_ACK_MSG = 5;
-    private ChannelBondQueue bondQueue;
+    private NetShellServerQueue bondQueue;
 
-    public NetShellServerCodec(ChannelBondQueue bondQueue) {
+    public NetShellServerCodec(NetShellServerQueue bondQueue) {
         super("NS-Server");
         this.bondQueue = bondQueue;
     }

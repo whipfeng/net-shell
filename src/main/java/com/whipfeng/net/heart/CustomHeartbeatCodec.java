@@ -18,7 +18,7 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomHeartbeatCodec.class);
 
-    private static final byte HEAD_LEN = 5;
+    protected static final byte HEAD_LEN = 5;
 
     protected static final byte PING_MSG = 1;
     protected static final byte PONG_MSG = 2;
@@ -79,7 +79,22 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
             return;
         }
 
+        if (in.readableBytes() < len) {
+            in.resetReaderIndex();
+            return;
+        }
+
+
+        if (len > 0) {
+            decode(ctx, flag, in, len);
+            return;
+        }
         decode(ctx, flag);
+
+    }
+
+    protected void decode(ChannelHandlerContext ctx, byte flag, ByteBuf in, int len) throws Exception {
+        throw new CorruptedFrameException("Unsupported flag: " + flag);
     }
 
     protected void decode(ChannelHandlerContext ctx, byte flag) throws Exception {

@@ -1,8 +1,9 @@
 package com.whipfeng.net;
 
 import com.whipfeng.net.shell.client.NetShellClient;
-import com.whipfeng.net.shell.proxy.NetShellProxy;
-import com.whipfeng.net.shell.proxy.PasswordAuth;
+import com.whipfeng.net.shell.client.proxy.NetShellProxyClient;
+import com.whipfeng.net.shell.server.proxy.NetShellProxyServer;
+import com.whipfeng.net.shell.server.proxy.PasswordAuth;
 import com.whipfeng.net.shell.transfer.NetShellTransfer;
 import com.whipfeng.net.shell.server.NetShellServer;
 import org.junit.Test;
@@ -34,28 +35,37 @@ public class NetShellTest {
     }
 
     @Test
-    public void testNetShellProxy() throws Exception {
-        String nsHost = "localhost";
+    public void testNetShellProxyServer() throws Exception {
         int nsPort = 8088;
+        int outPort = 9099;
 
-        NetShellProxy netShellProxy = new NetShellProxy(nsHost, nsPort, false, null);
-        netShellProxy.run();
+        NetShellProxyServer netShellProxyServer = new NetShellProxyServer(nsPort, outPort, false, null);
+        netShellProxyServer.run();
     }
 
     @Test
-    public void testNetShellProxyWithAuth() throws Exception {
-        String nsHost = "localhost";
+    public void testNetShellProxyServerWithAuth() throws Exception {
         int nsPort = 8088;
+        int outPort = 9099;
 
         PasswordAuth pa = new PasswordAuth() {
             @Override
             public boolean auth(String user, String password) {
-                return "test123".equals(user) && "test123".equals(password);
+                return "migu_log".equals(user) && "migu_log123!".equals(password);
             }
         };
 
-        NetShellProxy netShellProxy = new NetShellProxy(nsHost, nsPort, true, pa);
-        netShellProxy.run();
+        NetShellProxyServer netShellProxyServer = new NetShellProxyServer(nsPort, outPort, true, pa);
+        netShellProxyServer.run();
+    }
+
+    @Test
+    public void testNetShellProxyClient() throws Exception {
+        String nsHost = "localhost";
+        int nsPort = 8088;
+
+        NetShellProxyClient netShellProxyClient = new NetShellProxyClient(nsHost, nsPort, 169153536, -256);
+        netShellProxyClient.run();
     }
 
     @Test

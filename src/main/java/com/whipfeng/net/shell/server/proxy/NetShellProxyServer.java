@@ -1,10 +1,14 @@
-package com.whipfeng.net.shell.server;
+package com.whipfeng.net.shell.server.proxy;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.socksx.v5.Socks5CommandRequestDecoder;
+import io.netty.handler.codec.socksx.v5.Socks5InitialRequestDecoder;
+import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthRequestDecoder;
+import io.netty.handler.codec.socksx.v5.Socks5ServerEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,19 +17,24 @@ import org.slf4j.LoggerFactory;
  * 网络外壳服务端，监听外部网络和外壳网络
  * Created by fz on 2018/11/19.
  */
-public class NetShellServer {
+public class NetShellProxyServer {
 
-    private static final Logger logger = LoggerFactory.getLogger(NetShellServer.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetShellProxyServer.class);
 
     private int nsPort;
     private int outPort;
-    private NetShellServerQueue bondQueue = new NetShellServerQueue();
+    private volatile boolean isNeedAuth;
+    private PasswordAuth passwordAuth;
+
+    private NetShellProxyServerQueue bondQueue = new NetShellProxyServerQueue();
     private EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     private EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    public NetShellServer(int nsPort, int outPort) {
+    public NetShellProxyServer(int nsPort, int outPort, boolean isNeedAuth, PasswordAuth passwordAuth) {
         this.nsPort = nsPort;
         this.outPort = outPort;
+        this.isNeedAuth = isNeedAuth;
+        this.passwordAuth = passwordAuth;
     }
 
     public void run() throws Exception {
@@ -39,7 +48,7 @@ public class NetShellServer {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
                                     .addLast(new IdleStateHandler(10, 0, 0))
-                                    .addLast(new NetShellServerCodec(bondQueue));
+                                    .addLast(new NetShellProxyServerCodec(bondQueue));
                         }
                     });
 
@@ -50,11 +59,18 @@ public class NetShellServer {
                     .channel(NioServerSocketChannel.class)
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
-                    .childOption(ChannelOption.AUTO_READ, false)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
-                                    .addLast(new NetShellServerHandler(bondQueue));
+                                    .addLast(Socks5ServerEncoder.DEFAULT)
+                                    .addLast(new Socks5InitialRequestDecoder())
+                                    .addLast(new Socks5InitialRequestHandler(isNeedAuth));
+                            if (isNeedAuth) {
+                                ch.pipeline().addLast(new Socks5PasswordAuthRequestDecoder())
+                                        .addLast(new Socks5PasswordAuthRequestHandler(passwordAuth));
+                            }
+                            ch.pipeline().addLast(new Socks5CommandRequestDecoder())
+                                    .addLast(new Socks5CommandRequestHandler(bondQueue));
                         }
                     });
 

@@ -8,7 +8,7 @@ import java.util.Queue;
 /**
  * Created by fz on 2018/11/22.
  */
-public class ChannelBondQueue {
+public class NetShellServerQueue {
 
     private Queue<ChannelHandlerContext> nsQueue = new ArrayDeque<ChannelHandlerContext>();
     private Queue<ChannelHandlerContext> outQueue = new ArrayDeque<ChannelHandlerContext>();

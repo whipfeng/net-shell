@@ -1,4 +1,4 @@
-package com.whipfeng.net.shell.proxy;
+package com.whipfeng.net.shell.client.proxy;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -8,10 +8,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequestDecoder;
-import io.netty.handler.codec.socksx.v5.Socks5InitialRequestDecoder;
-import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthRequestDecoder;
-import io.netty.handler.codec.socksx.v5.Socks5ServerEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,36 +16,38 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * 网络外壳代理端，代理访问内部网络和外壳网络
+ * 网络外壳客户端，访问内部网络和外壳网络
  * Created by fz on 2018/11/20.
  */
-public class NetShellProxy {
+public class NetShellProxyClient {
 
-    private static final Logger logger = LoggerFactory.getLogger(NetShellProxy.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetShellProxyClient.class);
 
     private String nsHost;
     private int nsPort;
 
-    private volatile boolean isNeedAuth;
-    private PasswordAuth passwordAuth;
+    private int networkCode;
+    private int subMaskCode;
+
+    private volatile long stopTime = 0;
 
     private boolean running = true;
 
-    private BlockingQueue<NetShellProxyCodec> blockingQueue = new ArrayBlockingQueue(1);
+    private BlockingQueue<NetShellProxyClientCodec> blockingQueue = new ArrayBlockingQueue(1);
 
-    public NetShellProxy(String nsHost, int nsPort, boolean isNeedAuth, PasswordAuth passwordAuth) {
+    public NetShellProxyClient(String nsHost, int nsPort, int networkCode, int subMaskCode) {
         this.nsHost = nsHost;
         this.nsPort = nsPort;
-        this.isNeedAuth = isNeedAuth;
-        this.passwordAuth = passwordAuth;
+        this.networkCode = networkCode;
+        this.subMaskCode = subMaskCode;
     }
 
     public void run() throws Exception {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             while (running) {
-                final NetShellProxyCodec netShellProxyCodec = new NetShellProxyCodec(blockingQueue);
-                blockingQueue.put(netShellProxyCodec);
+                final NetShellProxyClientCodec netShellClientCodec = new NetShellProxyClientCodec(blockingQueue, networkCode, subMaskCode);
+                blockingQueue.put(netShellClientCodec);
                 Bootstrap nsBootstrap = new Bootstrap();
                 nsBootstrap.group(workerGroup)
                         .channel(NioSocketChannel.class)
@@ -57,16 +55,7 @@ public class NetShellProxy {
                             public void initChannel(SocketChannel ch) throws Exception {
                                 ch.pipeline()
                                         .addLast(new IdleStateHandler(0, 0, 5))
-                                        .addLast(netShellProxyCodec)
-                                        .addLast(Socks5ServerEncoder.DEFAULT)
-                                        .addLast(new Socks5InitialRequestDecoder())
-                                        .addLast(new Socks5InitialRequestHandler(isNeedAuth));
-                                if (isNeedAuth) {
-                                    ch.pipeline().addLast(new Socks5PasswordAuthRequestDecoder())
-                                            .addLast(new Socks5PasswordAuthRequestHandler(passwordAuth));
-                                }
-                                ch.pipeline().addLast(new Socks5CommandRequestDecoder())
-                                        .addLast(new Socks5CommandRequestHandler());
+                                        .addLast(netShellClientCodec);
                             }
                         });
 
@@ -74,14 +63,19 @@ public class NetShellProxy {
                 future.addListener(new ChannelFutureListener() {
                     public void operationComplete(ChannelFuture future) {
                         if (future.isSuccess()) {
+                            stopTime = 0;
                             logger.info("Connect OK(P):" + future.channel().localAddress());
                         } else {
-                            boolean result = blockingQueue.remove(netShellProxyCodec);
+                            stopTime = 30000;//睡30秒再来
+                            boolean result = blockingQueue.remove(netShellClientCodec);
                             logger.info(result + " Lost Connect:" + future.channel().localAddress());
                             logger.error("Connect fail, will try again.", future.cause());
                         }
                     }
                 });
+                if (stopTime > 0) {
+                    Thread.sleep(stopTime);
+                }
             }
         } finally {
             workerGroup.shutdownGracefully();

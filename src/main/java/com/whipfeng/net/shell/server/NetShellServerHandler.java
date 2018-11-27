@@ -11,13 +11,13 @@ import org.slf4j.LoggerFactory;
  * 通道纽带
  * Created by fz on 2018/11/22.
  */
-public class ChannelBondHandler extends ChannelHandlerAdapter {
+public class NetShellServerHandler extends ChannelHandlerAdapter {
 
-    private static final Logger logger = LoggerFactory.getLogger(ChannelBondHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetShellServerHandler.class);
 
-    private ChannelBondQueue bondQueue;
+    private NetShellServerQueue bondQueue;
 
-    public ChannelBondHandler(ChannelBondQueue bondQueue) {
+    public NetShellServerHandler(NetShellServerQueue bondQueue) {
         this.bondQueue = bondQueue;
     }
 

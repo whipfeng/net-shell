@@ -1,4 +1,4 @@
-package com.whipfeng.net.shell.proxy;
+package com.whipfeng.net.shell.server.proxy;
 
 /**
  * 密码认证方式

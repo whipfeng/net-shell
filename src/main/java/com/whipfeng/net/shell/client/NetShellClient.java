@@ -26,6 +26,8 @@ public class NetShellClient {
     private String inHost;
     private int inPort;
 
+    private volatile long stopTime = 0;
+
     private boolean running = true;
 
     private BlockingQueue<NetShellClientCodec> blockingQueue = new ArrayBlockingQueue(1);
@@ -58,14 +60,19 @@ public class NetShellClient {
                 future.addListener(new ChannelFutureListener() {
                     public void operationComplete(ChannelFuture future) {
                         if (future.isSuccess()) {
+                            stopTime = 0;
                             logger.info("Connect OK:" + future.channel().localAddress());
                         } else {
+                            stopTime = 30000;//睡30秒再来
                             boolean result = blockingQueue.remove(netShellClientCodec);
                             logger.info(result + " Lost Connect:" + future.channel().localAddress());
                             logger.error("Connect fail, will try again.", future.cause());
                         }
                     }
                 });
+                if (stopTime > 0) {
+                    Thread.sleep(stopTime);
+                }
             }
         } finally {
             workerGroup.shutdownGracefully();

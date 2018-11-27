@@ -1,8 +1,9 @@
 package com.whipfeng.net.shell;
 
 import com.whipfeng.net.shell.client.NetShellClient;
-import com.whipfeng.net.shell.proxy.NetShellProxy;
-import com.whipfeng.net.shell.proxy.PasswordAuth;
+import com.whipfeng.net.shell.client.proxy.NetShellProxyClient;
+import com.whipfeng.net.shell.server.proxy.NetShellProxyServer;
+import com.whipfeng.net.shell.server.proxy.PasswordAuth;
 import com.whipfeng.net.shell.transfer.NetShellTransfer;
 import com.whipfeng.net.shell.server.NetShellServer;
 import com.whipfeng.util.ArgsUtil;
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,7 +35,8 @@ public class NetShellStarter {
          *
          * java -jar net-shell-1.0-SNAPSHOT.jar -m server -nsPort 8808 -outPort 9099
          * java -jar net-shell-1.0-SNAPSHOT.jar -m client -nsHost localhost -nsPort 8808 -inHost 10.21.20.229 -inPort 22
-         * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy -nsHost localhost -nsPort 8808 -needAuth true -authFilePath E:\workspace_myself\net-shell\target\AuthList.txt
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.server -nsPort 8808 -outPort 9099 -needAuth true -authFilePath E:\workspace_myself\net-shell\target\AuthList.txt
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.client -nsHost localhost -nsPort 8808 -network.code 0.0.0.0 -sub.mask.code 0.0.0.0
          * java -jar net-shell-1.0-SNAPSHOT.jar -m transfer -tsfPort 9099 -outHost 10.19.18.50 -outPort 19666
          */
         if ("server".equals(mode)) {
@@ -57,15 +60,15 @@ public class NetShellStarter {
 
             NetShellClient netShellClient = new NetShellClient(nsHost, nsPort, inHost, inPort);
             netShellClient.run();
-        } else if ("proxy".equals(mode)) {
-            String nsHost = argsUtil.get("-nsHost", "localhost");
+        } else if ("proxy.server".equals(mode)) {
             int nsPort = argsUtil.get("-nsPort", 8088);
+            int outPort = argsUtil.get("-outPort", 9099);
 
             boolean isNeedAuth = argsUtil.get("-needAuth", false);
             final String authFilePath = argsUtil.get("-authFilePath", null);
 
-            logger.info("nsHost=" + nsHost);
             logger.info("nsPort=" + nsPort);
+            logger.info("outPort=" + outPort);
             logger.info("isNeedAuth=" + isNeedAuth);
             logger.info("authFilePath=" + authFilePath);
 
@@ -88,8 +91,25 @@ public class NetShellStarter {
                 }
             };
 
-            NetShellProxy netShellProxy = new NetShellProxy(nsHost, nsPort, isNeedAuth, passwordAuth);
-            netShellProxy.run();
+            NetShellProxyServer netShellProxyServer = new NetShellProxyServer(nsPort, outPort, isNeedAuth, passwordAuth);
+            netShellProxyServer.run();
+        } else if ("proxy.client".equals(mode)) {
+            String nsHost = argsUtil.get("-nsHost", "localhost");
+            int nsPort = argsUtil.get("-nsPort", 8088);
+
+            String networkCodeStr = argsUtil.get("-network.code", "0.0.0.0");
+            String subMaskCodeStr = argsUtil.get("-sub.mask.code", "0.0.0.0");
+            int networkCode = ContextRouter.transferAddress(networkCodeStr);
+            int subMaskCode = ContextRouter.transferAddress(subMaskCodeStr);
+
+            logger.info("nsHost=" + nsHost);
+            logger.info("nsPort=" + nsPort);
+            logger.info("networkCode=" + networkCodeStr + "," + networkCode);
+            logger.info("subMaskCode=" + subMaskCodeStr + "," + subMaskCode);
+
+
+            NetShellProxyClient netShellProxyClient = new NetShellProxyClient(nsHost, nsPort, networkCode, subMaskCode);
+            netShellProxyClient.run();
         } else {
             int tsfPort = argsUtil.get("-tsfPort", 9099);
             String outHost = argsUtil.get("-outHost", "10.19.18.50");
