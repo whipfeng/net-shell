@@ -11,11 +11,27 @@ import java.util.List;
  */
 public class NetShellProxyServerQueue {
 
+    private List<ContextRouter> dfList = new LinkedList<ContextRouter>();
     private List<ContextRouter> nsList = new LinkedList<ContextRouter>();
     private List<ContextRouter> outList = new LinkedList<ContextRouter>();
 
     synchronized ContextRouter matchNetShell(ContextRouter outRouter) {
         Iterator<ContextRouter> nsItr = nsList.iterator();
+        ContextRouter nsRouter = matchContextRouter(outRouter, nsItr);
+        if (nsRouter != null) {
+            return nsRouter;
+        }
+
+        Iterator<ContextRouter> dfItr = dfList.iterator();
+        ContextRouter dfRouter = matchContextRouter(outRouter, dfItr);
+        if (dfRouter != null) {
+            return dfRouter;
+        }
+        outList.add(outRouter);
+        return null;
+    }
+
+    private ContextRouter matchContextRouter(ContextRouter outRouter, Iterator<ContextRouter> nsItr) {
         while (nsItr.hasNext()) {
             ContextRouter nsRouter = nsItr.next();
             if (ContextRouter.isMatchFrom(nsRouter, outRouter)) {
@@ -23,7 +39,6 @@ public class NetShellProxyServerQueue {
                 return nsRouter;
             }
         }
-        outList.add(outRouter);
         return null;
     }
 
@@ -35,6 +50,10 @@ public class NetShellProxyServerQueue {
                 outItr.remove();
                 return outRouter;
             }
+        }
+        if (nsRouter.getNetworkCode() == 0 && nsRouter.getSubMaskCode() == 0) {
+            dfList.add(nsRouter);
+            return null;
         }
         nsList.add(nsRouter);
         return null;

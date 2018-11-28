@@ -4,7 +4,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 
-import java.net.UnknownHostException;
 import java.util.StringTokenizer;
 
 /**
@@ -27,7 +26,7 @@ public class ContextRouter {
         this.ctx = ctx;
     }
 
-    public ContextRouter(ChannelHandlerContext ctx, Socks5CommandRequest commandRequest) throws UnknownHostException {
+    public ContextRouter(ChannelHandlerContext ctx, Socks5CommandRequest commandRequest) {
         this.commandRequest = commandRequest;
         this.ctx = ctx;
         if (Socks5AddressType.IPv4.equals(commandRequest.dstAddrType())) {

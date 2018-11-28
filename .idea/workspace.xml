@@ -8,9 +8,8 @@
   <component name="ChangeListManager">
     <list default="true" id="8ffbbf0e-4fa0-4a37-88f9-dc4b6d646c64" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/NetShellStarter.java" afterPath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/NetShellStarter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/PasswordAuth.java" afterPath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/PasswordAuth.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/Socks5PasswordAuthRequestHandler.java" afterPath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/Socks5PasswordAuthRequestHandler.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/ContextRouter.java" afterPath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/ContextRouter.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerQueue.java" afterPath="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerQueue.java" />
     </list>
     <ignored path="net-shell.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -47,13 +46,42 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="NetShellProxyServerCodec.java" pinned="false" current-in-tab="true">
+      <file leaf-file-name="NetShellProxyServerCodec.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerCodec.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.7640845">
-              <caret line="62" column="29" selection-start-line="62" selection-start-column="29" selection-end-line="62" selection-end-column="29" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="55" column="59" selection-start-line="55" selection-start-column="48" selection-end-line="55" selection-end-column="59" />
               <folding>
                 <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="NetShellProxyServerQueue.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerQueue.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="36" column="36" selection-start-line="36" selection-start-column="36" selection-end-line="36" selection-end-column="36" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#308#323#0" expanded="true" />
+                <element signature="e#382#397#0" expanded="true" />
+                <element signature="e#457#472#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ContextRouter.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/ContextRouter.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.7007042">
+              <caret line="46" column="51" selection-start-line="46" selection-start-column="48" selection-end-line="46" selection-end-column="51" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#1638#1639#0" expanded="true" />
+                <element signature="e#1672#1673#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -131,17 +159,17 @@
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/Router.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/Socks5CommandRequestHandler.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/client/NetShellClient.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerQueue.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/client/proxy/NetShellProxyClientCodec.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerCodec.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/NetShellServerCodec.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/client/NetShellClientCodec.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServer.java" />
         <option value="$PROJECT_DIR$/src/test/java/com/whipfeng/net/NetShellTest.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/ContextRouter.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/Socks5PasswordAuthRequestHandler.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/PasswordAuth.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/NetShellStarter.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/ContextRouter.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerQueue.java" />
       </list>
     </option>
   </component>
@@ -448,33 +476,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="target" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="net-shell" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="net-shell" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
               <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="test" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="java" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="net" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -575,44 +577,6 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="shell" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="net-shell" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="net-shell" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="main" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="java" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="whipfeng" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="net" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="shell" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="transfer" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -1427,7 +1391,7 @@
       <workItem from="1542605876012" duration="1902000" />
       <workItem from="1542608517515" duration="100165000" />
       <workItem from="1542974104031" duration="5668000" />
-      <workItem from="1542984292042" duration="59438000" />
+      <workItem from="1542984292042" duration="75295000" />
     </task>
     <task id="LOCAL-00001" summary="初始化">
       <created>1542606289131</created>
@@ -1525,7 +1489,13 @@
       <option name="project" value="LOCAL" />
       <updated>1543326025724</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="动态读取授权文件">
+      <created>1543377407882</created>
+      <option name="number" value="00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1543377407882</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TestHistory">
@@ -1561,7 +1531,7 @@
     </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="167173000" />
+    <option name="totallyTimeSpent" value="183030000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1366" height="728" extended-state="0" />
@@ -1572,7 +1542,7 @@
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32864675" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27947932" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.27947932" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.44991213" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32864675" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32991454" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -1617,7 +1587,8 @@
     <MESSAGE value="修改原代理为透传模式，增加sock5代理模式" />
     <MESSAGE value="代码重构" />
     <MESSAGE value="代理迁至服务端，且建立路由策略" />
-    <option name="LAST_COMMIT_MESSAGE" value="代理迁至服务端，且建立路由策略" />
+    <MESSAGE value="动态读取授权文件" />
+    <option name="LAST_COMMIT_MESSAGE" value="动态读取授权文件" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1771,33 +1742,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/ContextRouter.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="41" column="41" selection-start-line="41" selection-start-column="41" selection-end-line="41" selection-end-column="41" />
-          <folding>
-            <element signature="imports" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/target/Readme.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerQueue.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="13" column="18" selection-start-line="13" selection-start-column="18" selection-end-line="13" selection-end-column="18" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#308#323#0" expanded="true" />
-            <element signature="e#383#398#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1900,9 +1849,9 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="12" column="17" selection-start-line="12" selection-start-column="17" selection-end-line="12" selection-end-column="17" />
           <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#3154#3894#0" expanded="true" />
-            <element signature="e#3893#3894#0" expanded="true" />
+            <element signature="imports" expanded="false" />
+            <element signature="e#3154#3894#0" expanded="false" />
+            <element signature="e#3893#3894#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2021,8 +1970,8 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="60" column="19" selection-start-line="60" selection-start-column="19" selection-end-line="60" selection-end-column="19" />
           <folding>
-            <element signature="e#1792#1793#0" expanded="true" />
-            <element signature="e#1850#1851#0" expanded="true" />
+            <element signature="e#1792#1793#0" expanded="false" />
+            <element signature="e#1850#1851#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2032,8 +1981,8 @@
         <state vertical-scroll-proportion="-1.1462963">
           <caret line="217" column="16" selection-start-line="217" selection-start-column="16" selection-end-line="217" selection-end-column="16" />
           <folding>
-            <element signature="e#9868#9869#0" expanded="true" />
-            <element signature="e#9922#9923#0" expanded="true" />
+            <element signature="e#9868#9869#0" expanded="false" />
+            <element signature="e#9922#9923#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2051,10 +2000,10 @@
         <state vertical-scroll-proportion="0.33333334">
           <caret line="306" column="16" selection-start-line="306" selection-start-column="16" selection-end-line="306" selection-end-column="16" />
           <folding>
-            <element signature="e#9389#9557#0" expanded="true" />
-            <element signature="e#9556#9557#0" expanded="true" />
-            <element signature="e#9961#10131#0" expanded="true" />
-            <element signature="e#10130#10131#0" expanded="true" />
+            <element signature="e#9389#9557#0" expanded="false" />
+            <element signature="e#9556#9557#0" expanded="false" />
+            <element signature="e#9961#10131#0" expanded="false" />
+            <element signature="e#10130#10131#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2096,10 +2045,35 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerCodec.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.7640845">
-          <caret line="62" column="29" selection-start-line="62" selection-start-column="29" selection-end-line="62" selection-end-column="29" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="55" column="59" selection-start-line="55" selection-start-column="48" selection-end-line="55" selection-end-column="59" />
           <folding>
             <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/server/proxy/NetShellProxyServerQueue.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="36" column="36" selection-start-line="36" selection-start-column="36" selection-end-line="36" selection-end-column="36" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#308#323#0" expanded="true" />
+            <element signature="e#382#397#0" expanded="true" />
+            <element signature="e#457#472#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/whipfeng/net/shell/ContextRouter.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.7007042">
+          <caret line="46" column="51" selection-start-line="46" selection-start-column="48" selection-end-line="46" selection-end-column="51" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#1638#1639#0" expanded="true" />
+            <element signature="e#1672#1673#0" expanded="true" />
           </folding>
         </state>
       </provider>
