@@ -11,9 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * 网络外壳服务端，监听外部网络和外壳网络
@@ -72,22 +69,23 @@ public class NetShellStarter {
             logger.info("isNeedAuth=" + isNeedAuth);
             logger.info("authFilePath=" + authFilePath);
 
-            final Set<String> authSet = new HashSet<String>();
-            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(authFilePath)));
-            try {
-                String line;
-                while (null != (line = br.readLine())) {
-                    authSet.add(line);
-                }
-            } finally {
-                br.close();
-            }
 
             PasswordAuth passwordAuth = new PasswordAuth() {
                 @Override
-                public boolean auth(String user, String password) {
+                public boolean auth(String user, String password) throws Exception {
                     String up = user + "/" + password;
-                    return authSet.contains(up);
+                    BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(authFilePath)));
+                    try {
+                        String line;
+                        while (null != (line = br.readLine())) {
+                            if (up.equals(line)) {
+                                return true;
+                            }
+                        }
+                    } finally {
+                        br.close();
+                    }
+                    return false;
                 }
             };
 
