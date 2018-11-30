@@ -58,7 +58,7 @@ public class NetShellProxyClientCodec extends CustomHeartbeatCodec {
                         }
                     });
             //获取主机名和端口
-            final int inPort = (in.readByte() << 8) | in.readByte();
+            final int inPort = ((255 & in.readByte()) << 8) | (255 & in.readByte());
             byte[] buf = new byte[len - 2];
             in.readBytes(buf);
             final String inHost = new String(buf, "UTF-8");

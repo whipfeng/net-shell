@@ -16,53 +16,53 @@ public class NetShellTransferHandler extends ChannelHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(NetShellTransferHandler.class);
 
-    private String outHost;
-    private int outPort;
+    private String dstHost;
+    private int dstPort;
 
-    public NetShellTransferHandler(String outHost, int outPort) {
-        this.outHost = outHost;
-        this.outPort = outPort;
+    public NetShellTransferHandler(String dstHost, int dstPort) {
+        this.dstHost = dstHost;
+        this.dstPort = dstPort;
     }
 
     @Override
-    public void channelActive(final ChannelHandlerContext proxyCtx) {
-        logger.info("Connect OK:" + proxyCtx.channel().remoteAddress());
-        Bootstrap outBootstrap = new Bootstrap();
-        outBootstrap.group(proxyCtx.channel().eventLoop().parent())
+    public void channelActive(final ChannelHandlerContext tsfCtx) {
+        logger.info("Connect OK:" + tsfCtx.channel().remoteAddress());
+        Bootstrap dstBootstrap = new Bootstrap();
+        dstBootstrap.group(tsfCtx.channel().eventLoop().parent())
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     public void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline()
-                                .addLast(new MsgExchangeHandler(proxyCtx.channel()));
+                                .addLast(new MsgExchangeHandler(tsfCtx.channel()));
                     }
                 });
-        ChannelFuture outFuture = outBootstrap.remoteAddress(outHost, outPort).connect();
+        ChannelFuture dstFuture = dstBootstrap.remoteAddress(dstHost, dstPort).connect();
 
         //异步等待连接结果
-        outFuture.addListener(new ChannelFutureListener() {
-            public void operationComplete(ChannelFuture outFuture) {
-                if (outFuture.isSuccess()) {
-                    Channel outChannel = outFuture.channel();
-                    Channel proxyChannel = proxyCtx.channel();
+        dstFuture.addListener(new ChannelFutureListener() {
+            public void operationComplete(ChannelFuture dstFuture) {
+                if (dstFuture.isSuccess()) {
+                    Channel dstChannel = dstFuture.channel();
+                    Channel tsfChannel = tsfCtx.channel();
 
-                    logger.info("Finish Connect:" + outChannel.localAddress());
+                    logger.info("Finish Connect:" + dstChannel.localAddress());
 
-                    proxyCtx.pipeline().addLast(new MsgExchangeHandler(outChannel));
+                    tsfCtx.pipeline().addLast(new MsgExchangeHandler(dstChannel));
                     //响应连接
-                    proxyChannel.config().setAutoRead(true);
-                    proxyChannel.read();
+                    tsfChannel.config().setAutoRead(true);
+                    tsfChannel.read();
 
                     //如果代理网络已经挂了，则直接关闭外部网络
-                    if (!proxyChannel.isActive()) {
-                        outChannel.close();
+                    if (!tsfChannel.isActive()) {
+                        dstChannel.close();
                     }
                 } else {
                     //如果内部网络没成功，则直接关闭代理网络
-                    proxyCtx.close();
+                    tsfCtx.close();
                 }
             }
         });
-        proxyCtx.fireChannelActive();
+        tsfCtx.fireChannelActive();
     }
 }

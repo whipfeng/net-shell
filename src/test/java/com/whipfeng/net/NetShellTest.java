@@ -6,6 +6,7 @@ import com.whipfeng.net.shell.server.proxy.NetShellProxyServer;
 import com.whipfeng.net.shell.server.proxy.PasswordAuth;
 import com.whipfeng.net.shell.transfer.NetShellTransfer;
 import com.whipfeng.net.shell.server.NetShellServer;
+import com.whipfeng.net.shell.transfer.proxy.NetShellProxyTransfer;
 import org.junit.Test;
 
 /**
@@ -69,12 +70,26 @@ public class NetShellTest {
     }
 
     @Test
+    public void testNetShellProxyTransfer() throws Exception {
+        int tsfPort = 9099;
+        String proxyHost = "localhost";
+        int proxyPort = 8088;
+        String username = "xxx";
+        String password = "xxx";
+        String dstHost = "localhost";
+        int dstPort = 3306;
+
+        NetShellProxyTransfer netShellProxyTransfer = new NetShellProxyTransfer(tsfPort, proxyHost, proxyPort, username, password, dstHost, dstPort);
+        netShellProxyTransfer.run();
+    }
+
+    @Test
     public void testNetShellTransfer() throws Exception {
         int proxyPort = 9099;
-        String outHost = "10.19.18.50";
-        int outPort = 19666;
+        String outHost = "localhost";
+        int outPort = 8088;
 
-        NetShellTransfer netShellProxy = new NetShellTransfer(proxyPort, outHost, outPort);
-        netShellProxy.run();
+        NetShellTransfer netShellTransfer = new NetShellTransfer(proxyPort, outHost, outPort);
+        netShellTransfer.run();
     }
 }

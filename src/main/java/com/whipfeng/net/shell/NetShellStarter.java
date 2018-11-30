@@ -6,6 +6,7 @@ import com.whipfeng.net.shell.server.proxy.NetShellProxyServer;
 import com.whipfeng.net.shell.server.proxy.PasswordAuth;
 import com.whipfeng.net.shell.transfer.NetShellTransfer;
 import com.whipfeng.net.shell.server.NetShellServer;
+import com.whipfeng.net.shell.transfer.proxy.NetShellProxyTransfer;
 import com.whipfeng.util.ArgsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,8 @@ public class NetShellStarter {
          * java -jar net-shell-1.0-SNAPSHOT.jar -m client -nsHost localhost -nsPort 8808 -inHost 10.21.20.229 -inPort 22
          * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.server -nsPort 8808 -outPort 9099 -needAuth true -authFilePath E:\workspace_myself\net-shell\target\AuthList.txt
          * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.client -nsHost localhost -nsPort 8808 -network.code 0.0.0.0 -sub.mask.code 0.0.0.0
-         * java -jar net-shell-1.0-SNAPSHOT.jar -m transfer -tsfPort 9099 -outHost 10.19.18.50 -outPort 19666
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m transfer -tsfPort 9099 -dstHost 10.21.20.229 -dstPort 22
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.transfer -tsfPort 9099 -proxyHost localhost -proxyPort 8000 -username xxx -password xxx -dstHost 10.21.20.229 -dstPort 9666
          */
         if ("server".equals(mode)) {
             int nsPort = argsUtil.get("-nsPort", 8088);
@@ -108,15 +110,31 @@ public class NetShellStarter {
 
             NetShellProxyClient netShellProxyClient = new NetShellProxyClient(nsHost, nsPort, networkCode, subMaskCode);
             netShellProxyClient.run();
+        } else if ("proxy.transfer".equals(mode)) {
+            int tsfPort = argsUtil.get("-tsfPort", 9099);
+            String proxyHost = argsUtil.get("-proxyHost", "10.19.18.50");
+            int proxyPort = argsUtil.get("-proxyPort", 19666);
+            String username = argsUtil.get("-username", "xxx");
+            String password = argsUtil.get("-password", "xxx");
+            String dstHost = argsUtil.get("-dstHost", "10.19.18.50");
+            int dstPort = argsUtil.get("-dstPort", 19666);
+            logger.info("tsfPort=" + tsfPort);
+            logger.info("proxyHost=" + proxyHost);
+            logger.info("proxyPort=" + proxyPort);
+            logger.info("username=" + username);
+            logger.info("password=" + password);
+            logger.info("dstHost=" + dstHost);
+            logger.info("dstPort=" + dstPort);
+            NetShellProxyTransfer netShellProxyTransfer = new NetShellProxyTransfer(tsfPort, proxyHost, proxyPort, username, password, dstHost, dstPort);
+            netShellProxyTransfer.run();
         } else {
             int tsfPort = argsUtil.get("-tsfPort", 9099);
-            String outHost = argsUtil.get("-outHost", "10.19.18.50");
-            ;
-            int outPort = argsUtil.get("-outPort", 19666);
+            String dstHost = argsUtil.get("-dstHost", "10.19.18.50");
+            int dstPort = argsUtil.get("-dstPort", 19666);
             logger.info("tsfPort=" + tsfPort);
-            logger.info("outHost=" + outHost);
-            logger.info("outPort=" + outPort);
-            NetShellTransfer netShellTransfer = new NetShellTransfer(tsfPort, outHost, outPort);
+            logger.info("dstHost=" + dstHost);
+            logger.info("dstPort=" + dstPort);
+            NetShellTransfer netShellTransfer = new NetShellTransfer(tsfPort, dstHost, dstPort);
             netShellTransfer.run();
         }
     }
