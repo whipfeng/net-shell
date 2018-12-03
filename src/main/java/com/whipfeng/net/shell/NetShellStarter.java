@@ -49,7 +49,7 @@ public class NetShellStarter {
             String nsHost = argsUtil.get("-nsHost", "localhost");
             int nsPort = argsUtil.get("-nsPort", 8088);
 
-            String inHost = argsUtil.get("-inHost", "10.21.20.229");
+            String inHost = argsUtil.get("-inHost", "xx.xx.xx.xx");
             int inPort = argsUtil.get("-inPort", 22);
 
             logger.info("nsHost=" + nsHost);
@@ -112,12 +112,12 @@ public class NetShellStarter {
             netShellProxyClient.run();
         } else if ("proxy.transfer".equals(mode)) {
             int tsfPort = argsUtil.get("-tsfPort", 9099);
-            String proxyHost = argsUtil.get("-proxyHost", "10.19.18.50");
-            int proxyPort = argsUtil.get("-proxyPort", 19666);
+            String proxyHost = argsUtil.get("-proxyHost", "xx.xx.xx.xx");
+            int proxyPort = argsUtil.get("-proxyPort", 9666);
             String username = argsUtil.get("-username", "xxx");
             String password = argsUtil.get("-password", "xxx");
-            String dstHost = argsUtil.get("-dstHost", "10.19.18.50");
-            int dstPort = argsUtil.get("-dstPort", 19666);
+            String dstHost = argsUtil.get("-dstHost", "xx.xx.xx.xx");
+            int dstPort = argsUtil.get("-dstPort", 9666);
             logger.info("tsfPort=" + tsfPort);
             logger.info("proxyHost=" + proxyHost);
             logger.info("proxyPort=" + proxyPort);
@@ -129,8 +129,8 @@ public class NetShellStarter {
             netShellProxyTransfer.run();
         } else {
             int tsfPort = argsUtil.get("-tsfPort", 9099);
-            String dstHost = argsUtil.get("-dstHost", "10.19.18.50");
-            int dstPort = argsUtil.get("-dstPort", 19666);
+            String dstHost = argsUtil.get("-dstHost", "xx.xx.xx.xx");
+            int dstPort = argsUtil.get("-dstPort", 9666);
             logger.info("tsfPort=" + tsfPort);
             logger.info("dstHost=" + dstHost);
             logger.info("dstPort=" + dstPort);
