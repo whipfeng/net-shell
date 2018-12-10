@@ -2,8 +2,10 @@ package com.whipfeng.net.shell;
 
 import com.whipfeng.net.shell.client.NetShellClient;
 import com.whipfeng.net.shell.client.proxy.NetShellProxyClient;
+import com.whipfeng.net.shell.client.proxy.alone.NetShellAloneClient;
 import com.whipfeng.net.shell.server.proxy.NetShellProxyServer;
 import com.whipfeng.net.shell.server.proxy.PasswordAuth;
+import com.whipfeng.net.shell.server.proxy.alone.NetShellAloneServer;
 import com.whipfeng.net.shell.transfer.NetShellTransfer;
 import com.whipfeng.net.shell.server.NetShellServer;
 import com.whipfeng.net.shell.transfer.proxy.NetShellProxyTransfer;
@@ -35,6 +37,8 @@ public class NetShellStarter {
          * java -jar net-shell-1.0-SNAPSHOT.jar -m client -nsHost localhost -nsPort 8808 -inHost 10.21.20.229 -inPort 22
          * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.server -nsPort 8808 -outPort 9099 -needAuth true -authFilePath E:\workspace_myself\net-shell\target\AuthList.txt
          * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.client -nsHost localhost -nsPort 8808 -network.code 0.0.0.0 -sub.mask.code 0.0.0.0
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m alone.server -alPort 8808 -needAuth true -authFilePath E:\workspace_myself\net-shell\target\AuthList.txt
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m alone.client -alHost localhost -alPort 8808 -username xxx -password xxx -network.code 0.0.0.0 -sub.mask.code 0.0.0.0
          * java -jar net-shell-1.0-SNAPSHOT.jar -m transfer -tsfPort 9099 -dstHost 10.21.20.229 -dstPort 22
          * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.transfer -tsfPort 9099 -proxyHost localhost -proxyPort 8000 -username xxx -password xxx -dstHost 10.21.20.229 -dstPort 9666
          */
@@ -72,24 +76,7 @@ public class NetShellStarter {
             logger.info("authFilePath=" + authFilePath);
 
 
-            PasswordAuth passwordAuth = new PasswordAuth() {
-                @Override
-                public boolean auth(String user, String password) throws Exception {
-                    String up = user + "/" + password;
-                    BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(authFilePath)));
-                    try {
-                        String line;
-                        while (null != (line = br.readLine())) {
-                            if (up.equals(line)) {
-                                return true;
-                            }
-                        }
-                    } finally {
-                        br.close();
-                    }
-                    return false;
-                }
-            };
+            PasswordAuth passwordAuth = getPasswordAuth(authFilePath);
 
             NetShellProxyServer netShellProxyServer = new NetShellProxyServer(nsPort, outPort, isNeedAuth, passwordAuth);
             netShellProxyServer.run();
@@ -110,6 +97,40 @@ public class NetShellStarter {
 
             NetShellProxyClient netShellProxyClient = new NetShellProxyClient(nsHost, nsPort, networkCode, subMaskCode);
             netShellProxyClient.run();
+        } else if ("alone.server".equals(mode)) {
+            int alPort = argsUtil.get("-alPort", 8088);
+
+            boolean isNeedAuth = argsUtil.get("-needAuth", false);
+            final String authFilePath = argsUtil.get("-authFilePath", null);
+
+            logger.info("alPort=" + alPort);
+            logger.info("isNeedAuth=" + isNeedAuth);
+            logger.info("authFilePath=" + authFilePath);
+
+
+            PasswordAuth passwordAuth = getPasswordAuth(authFilePath);
+
+            NetShellAloneServer netShellAloneServer = new NetShellAloneServer(alPort, isNeedAuth, passwordAuth);
+            netShellAloneServer.run();
+        } else if ("alone.client".equals(mode)) {
+            String alHost = argsUtil.get("-alHost", "localhost");
+            int alPort = argsUtil.get("-alPort", 8088);
+
+            String username = argsUtil.get("-username", "xxx");
+            String password = argsUtil.get("-password", "xxx");
+            String networkCodeStr = argsUtil.get("-network.code", "0.0.0.0");
+            String subMaskCodeStr = argsUtil.get("-sub.mask.code", "0.0.0.0");
+            int networkCode = ContextRouter.transferAddress(networkCodeStr);
+            int subMaskCode = ContextRouter.transferAddress(subMaskCodeStr);
+
+            logger.info("alHost=" + alHost);
+            logger.info("alPort=" + alPort);
+            logger.info("networkCode=" + networkCodeStr + "," + networkCode);
+            logger.info("subMaskCode=" + subMaskCodeStr + "," + subMaskCode);
+
+
+            NetShellAloneClient netShellAloneClient = new NetShellAloneClient(alHost, alPort, username, password, networkCode, subMaskCode);
+            netShellAloneClient.run();
         } else if ("proxy.transfer".equals(mode)) {
             int tsfPort = argsUtil.get("-tsfPort", 9099);
             String proxyHost = argsUtil.get("-proxyHost", "xx.xx.xx.xx");
@@ -137,5 +158,26 @@ public class NetShellStarter {
             NetShellTransfer netShellTransfer = new NetShellTransfer(tsfPort, dstHost, dstPort);
             netShellTransfer.run();
         }
+    }
+
+    private static PasswordAuth getPasswordAuth(final String authFilePath) {
+        return new PasswordAuth() {
+            @Override
+            public boolean auth(String user, String password) throws Exception {
+                String up = user + "/" + password;
+                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(authFilePath)));
+                try {
+                    String line;
+                    while (null != (line = br.readLine())) {
+                        if (up.equals(line)) {
+                            return true;
+                        }
+                    }
+                } finally {
+                    br.close();
+                }
+                return false;
+            }
+        };
     }
 }

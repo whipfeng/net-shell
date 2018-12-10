@@ -2,8 +2,10 @@ package com.whipfeng.net;
 
 import com.whipfeng.net.shell.client.NetShellClient;
 import com.whipfeng.net.shell.client.proxy.NetShellProxyClient;
+import com.whipfeng.net.shell.client.proxy.alone.NetShellAloneClient;
 import com.whipfeng.net.shell.server.proxy.NetShellProxyServer;
 import com.whipfeng.net.shell.server.proxy.PasswordAuth;
+import com.whipfeng.net.shell.server.proxy.alone.NetShellAloneServer;
 import com.whipfeng.net.shell.transfer.NetShellTransfer;
 import com.whipfeng.net.shell.server.NetShellServer;
 import com.whipfeng.net.shell.transfer.proxy.NetShellProxyTransfer;
@@ -67,6 +69,30 @@ public class NetShellTest {
 
         NetShellProxyClient netShellProxyClient = new NetShellProxyClient(nsHost, nsPort, 169153536, -256);
         netShellProxyClient.run();
+    }
+
+    @Test
+    public void testNetShellAloneServerWithAuth() throws Exception {
+        int alPort = 8088;
+
+        PasswordAuth pa = new PasswordAuth() {
+            @Override
+            public boolean auth(String user, String password) {
+                return "migu_log".equals(user) && "migu_log123!".equals(password);
+            }
+        };
+
+        NetShellAloneServer netShellAloneServer = new NetShellAloneServer(alPort, true, pa);
+        netShellAloneServer.run();
+    }
+
+    @Test
+    public void testNetShellAloneClient() throws Exception {
+        String alHost = "localhost";
+        int alPort = 8088;
+
+        NetShellAloneClient netShellAloneClient = new NetShellAloneClient(alHost, alPort, "migu_log", "migu_log123!", 0, 0);
+        netShellAloneClient.run();
     }
 
     @Test

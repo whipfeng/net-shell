@@ -29,8 +29,9 @@ public class ContextRouter {
     public ContextRouter(ChannelHandlerContext ctx, Socks5CommandRequest commandRequest) {
         this.commandRequest = commandRequest;
         this.ctx = ctx;
-        if (Socks5AddressType.IPv4.equals(commandRequest.dstAddrType())) {
+        try {
             ipv4 = transferAddress(commandRequest.dstAddr());
+        } catch (NumberFormatException e) {
         }
     }
 

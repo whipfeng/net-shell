@@ -15,7 +15,7 @@ public class NetShellProxyServerQueue {
     private List<ContextRouter> nsList = new LinkedList<ContextRouter>();
     private List<ContextRouter> outList = new LinkedList<ContextRouter>();
 
-    synchronized ContextRouter matchNetShell(ContextRouter outRouter) {
+    public synchronized ContextRouter matchNetShell(ContextRouter outRouter) {
         Iterator<ContextRouter> nsItr = nsList.iterator();
         ContextRouter nsRouter = matchContextRouter(outRouter, nsItr);
         if (nsRouter != null) {
@@ -42,7 +42,7 @@ public class NetShellProxyServerQueue {
         return null;
     }
 
-    synchronized ContextRouter matchNetOut(ContextRouter nsRouter) {
+    public synchronized ContextRouter matchNetOut(ContextRouter nsRouter) {
         Iterator<ContextRouter> outItr = outList.iterator();
         while (outItr.hasNext()) {
             ContextRouter outRouter = outItr.next();
