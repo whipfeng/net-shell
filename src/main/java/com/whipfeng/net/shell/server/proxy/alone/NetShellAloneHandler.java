@@ -49,7 +49,7 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
                 Channel nsChannel = nsCtx.channel();
                 alCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
                 nsCtx.pipeline().addLast(new MsgExchangeHandler(alCtx.channel()));
-                nsCtx.pipeline().get(NetShellProxyServerCodec.class).sendReqMsg(nsCtx, commandRequest);
+                nsCtx.pipeline().get(NetShellProxyServerCodec.class).sendReqMsg(nsRouter, outRouter);
                 if (!nsChannel.isActive()) {
                     alCtx.close();
                 }

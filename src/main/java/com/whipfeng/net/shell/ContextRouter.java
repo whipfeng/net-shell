@@ -1,7 +1,6 @@
 package com.whipfeng.net.shell;
 
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 
 import java.util.StringTokenizer;

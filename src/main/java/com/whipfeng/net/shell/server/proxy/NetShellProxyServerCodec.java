@@ -3,6 +3,8 @@ package com.whipfeng.net.shell.server.proxy;
 import com.whipfeng.net.heart.CustomHeartbeatCodec;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.ContextRouter;
+import com.whipfeng.net.shell.RC4Codec;
+import com.whipfeng.util.RSAUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.socksx.v5.*;
@@ -22,6 +24,8 @@ public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
     private static final byte CONN_PRE_MSG = 4;
     private static final byte CONN_REQ_MSG = 5;
     private static final byte CONN_ACK_MSG = 6;
+    private static final byte PW_EX_REQ_MSG = 7;
+    private static final byte PW_EX_ACK_MSG = 8;
 
     private NetShellProxyServerQueue bondQueue;
 
@@ -46,7 +50,20 @@ public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
 
     @Override
     protected void decode(final ChannelHandlerContext nsCtx, byte flag, ByteBuf in, int len) throws Exception {
-        //响应连接
+        //交換密碼請求
+        if (PW_EX_REQ_MSG == flag) {
+            if (RSAUtil.noPrivateKey()) {
+                return;
+            }
+            byte[] key = new byte[len];
+            in.readBytes(key);
+            key = RSAUtil.privateDecrypt(key);
+            RC4Codec rc4Codec = new RC4Codec(key);
+            nsCtx.pipeline().addLast(rc4Codec);
+            sendFlagMsg(nsCtx, PW_EX_ACK_MSG);
+            return;
+        }
+        //連接前置任務
         if (CONN_PRE_MSG == flag && len == 8) {
             logger.debug(name + " Received(P) 'CONN_PRE' from: " + nsCtx.channel().remoteAddress());
             int networkCode = in.readInt();
@@ -60,7 +77,7 @@ public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
                 Channel outChannel = outCtx.channel();
                 outCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
                 nsCtx.pipeline().addLast(new MsgExchangeHandler(outCtx.channel()));
-                sendReqMsg(nsCtx, outRouter.getCommandRequest());
+                sendReqMsg(nsRouter, outRouter);
                 if (!outChannel.isActive()) {
                     nsCtx.close();
                 }
@@ -70,16 +87,16 @@ public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
         super.decode(nsCtx, flag);
     }
 
-    public ChannelFuture sendReqMsg(ChannelHandlerContext ctx, Socks5CommandRequest commandRequest) throws UnsupportedEncodingException {
-        String inHost = commandRequest.dstAddr();
-        int inPort = commandRequest.dstPort();
+    public ChannelFuture sendReqMsg(ContextRouter nsRouter, ContextRouter outRouter) throws UnsupportedEncodingException {
+        String inHost = outRouter.getCommandRequest().dstAddr();
+        int inPort = outRouter.getCommandRequest().dstPort();
         byte[] buf = inHost.getBytes("UTF-8");
-        ByteBuf out = ctx.alloc().buffer(HEAD_LEN + 2 + buf.length);
+        ByteBuf out = nsRouter.getCtx().alloc().buffer(HEAD_LEN + 2 + buf.length);
         out.writeInt(2 + buf.length);
         out.writeByte(CONN_REQ_MSG);
         out.writeByte((inPort >>> 8) & 255);
         out.writeByte(inPort & 255);
         out.writeBytes(buf);
-        return ctx.writeAndFlush(out);
+        return nsRouter.getCtx().writeAndFlush(out);
     }
 }

@@ -10,6 +10,7 @@ import com.whipfeng.net.shell.transfer.NetShellTransfer;
 import com.whipfeng.net.shell.server.NetShellServer;
 import com.whipfeng.net.shell.transfer.proxy.NetShellProxyTransfer;
 import com.whipfeng.util.ArgsUtil;
+import com.whipfeng.util.RSAUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,17 @@ public class NetShellStarter {
         ArgsUtil argsUtil = new ArgsUtil(args);
         String mode = argsUtil.get("-m", "client");
         logger.info("m=" + mode);
+
+        String publicKey = argsUtil.get("-public.key", null);
+        if (null != publicKey) {
+            logger.info("public.key=" + publicKey);
+            RSAUtil.initPublicKey(publicKey);
+        }
+        String privateKey = argsUtil.get("-private.key", null);
+        if (null != privateKey) {
+            logger.info("private.key=" + privateKey);
+            RSAUtil.initPrivateKey(privateKey);
+        }
 
         /**
          *

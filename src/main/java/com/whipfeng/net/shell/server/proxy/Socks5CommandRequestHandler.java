@@ -34,7 +34,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
             Channel nsChannel = nsCtx.channel();
             outCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
             nsCtx.pipeline().addLast(new MsgExchangeHandler(outCtx.channel()));
-            nsCtx.pipeline().get(NetShellProxyServerCodec.class).sendReqMsg(nsCtx, commandRequest);
+            nsCtx.pipeline().get(NetShellProxyServerCodec.class).sendReqMsg(nsRouter, outRouter);
             if (!nsChannel.isActive()) {
                 outCtx.close();
             }

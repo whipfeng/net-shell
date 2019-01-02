@@ -34,6 +34,10 @@ public class NetShellProxyServerQueue {
     private ContextRouter matchContextRouter(ContextRouter outRouter, Iterator<ContextRouter> nsItr) {
         while (nsItr.hasNext()) {
             ContextRouter nsRouter = nsItr.next();
+            if (!nsRouter.getCtx().channel().isActive()) {
+                nsItr.remove();
+                continue;
+            }
             if (ContextRouter.isMatchFrom(nsRouter, outRouter)) {
                 nsItr.remove();
                 return nsRouter;
@@ -46,6 +50,10 @@ public class NetShellProxyServerQueue {
         Iterator<ContextRouter> outItr = outList.iterator();
         while (outItr.hasNext()) {
             ContextRouter outRouter = outItr.next();
+            if (!outRouter.getCtx().channel().isActive()) {
+                outItr.remove();
+                continue;
+            }
             if (ContextRouter.isMatchTo(outRouter, nsRouter)) {
                 outItr.remove();
                 return outRouter;
