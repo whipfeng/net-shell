@@ -2,7 +2,7 @@ package com.whipfeng.net.shell.client.proxy;
 
 import com.whipfeng.net.heart.CustomHeartbeatCodec;
 import com.whipfeng.net.shell.MsgExchangeHandler;
-import com.whipfeng.net.shell.RC4Codec;
+import com.whipfeng.net.shell.RC4TransferHandler;
 import com.whipfeng.util.RSAUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -33,7 +33,7 @@ public class NetShellProxyClientCodec extends CustomHeartbeatCodec {
     private int networkCode;
     private int subMaskCode;
 
-    private RC4Codec rc4Codec;
+    private RC4TransferHandler rc4Codec;
 
     public NetShellProxyClientCodec(BlockingQueue<NetShellProxyClientCodec> blockingQueue, int networkCode, int subMaskCode) {
         super("NS-Proxy-Client");
@@ -124,7 +124,7 @@ public class NetShellProxyClientCodec extends CustomHeartbeatCodec {
         SecureRandom random = new SecureRandom();
         int numBytes = 128 + random.nextInt(128);
         byte[] key = random.generateSeed(numBytes);
-        rc4Codec = new RC4Codec(key);
+        rc4Codec = new RC4TransferHandler(key);
         key = RSAUtil.publicEncrypt(key);
         //随机生成并写出密码
         ByteBuf out = ctx.alloc().buffer(HEAD_LEN + key.length);

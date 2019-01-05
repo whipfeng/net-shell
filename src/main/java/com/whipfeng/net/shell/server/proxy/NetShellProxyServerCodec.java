@@ -3,7 +3,7 @@ package com.whipfeng.net.shell.server.proxy;
 import com.whipfeng.net.heart.CustomHeartbeatCodec;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.ContextRouter;
-import com.whipfeng.net.shell.RC4Codec;
+import com.whipfeng.net.shell.RC4TransferHandler;
 import com.whipfeng.util.RSAUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -58,7 +58,7 @@ public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
             byte[] key = new byte[len];
             in.readBytes(key);
             key = RSAUtil.privateDecrypt(key);
-            RC4Codec rc4Codec = new RC4Codec(key);
+            RC4TransferHandler rc4Codec = new RC4TransferHandler(key);
             nsCtx.pipeline().addLast(rc4Codec);
             sendFlagMsg(nsCtx, PW_EX_ACK_MSG);
             return;
