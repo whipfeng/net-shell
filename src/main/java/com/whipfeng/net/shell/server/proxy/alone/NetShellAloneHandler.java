@@ -55,9 +55,8 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
                 }
                 return;
             }
-
-            logger.warn("Wrong command type:" + commandRequest);
-            alCtx.close();
         }
+        logger.warn("Wrong command type:" + commandRequest);
+        alCtx.close();
     }
 }

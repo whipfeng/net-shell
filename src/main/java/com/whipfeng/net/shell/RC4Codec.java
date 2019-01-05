@@ -26,21 +26,13 @@ public class RC4Codec extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
-        byte[] output = transferBytes(in);
-        out.writeBytes(output);
+        RC4Util.transfer(in, this.secretKey);
+        out.writeBytes(in);
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        byte[] output = transferBytes(in);
-        ByteBuf frame = ctx.alloc().buffer(output.length);
-        frame.writeBytes(output);
-        out.add(frame);
-    }
-
-    private byte[] transferBytes(ByteBuf in) {
-        byte[] input = new byte[in.readableBytes()];
-        in.readBytes(input);
-        return RC4Util.transfer(input, this.secretKey);
+        RC4Util.transfer(in, this.secretKey);
+        out.add(in);
     }
 }

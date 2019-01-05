@@ -1,5 +1,7 @@
 package com.whipfeng.util;
 
+import io.netty.buffer.ByteBuf;
+
 /**
  * Created by cmll on 2019/1/2.
  */
@@ -22,21 +24,19 @@ public class RC4Util {
         return state;
     }
 
-    public static byte[] transfer(byte[] input, byte[] key) {
+    public static void transfer(ByteBuf buf, byte[] key) {
         int x = 0;
         int y = 0;
         int xorIdx;
         byte[] k = initKey(key);
-        byte[] output = new byte[input.length];
-        for (int i = 0; i < input.length; i++) {
+        for (int i = buf.readerIndex(); i < buf.writerIndex(); i++) {
             x = (x + 1) & 0xff;
             y = ((k[x] & 0xff) + y) & 0xff;
             byte tmp = k[x];
             k[x] = k[y];
             k[y] = tmp;
             xorIdx = ((k[x] & 0xff) + (k[y] & 0xff)) & 0xff;
-            output[i] = (byte) (input[i] ^ k[xorIdx]);
+            buf.setByte(i, buf.getByte(i) ^ k[xorIdx]);
         }
-        return output;
     }
 }
