@@ -43,12 +43,13 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
         if (in.readableBytes() < HEAD_LEN) {
             return;
         }
-        in.markReaderIndex();
-        int len = in.readInt();
-        byte flag = in.readByte();
+        int readerIdx = in.readerIndex();
+        int len = in.getInt(readerIdx);
+        byte flag = in.getByte(readerIdx + 4);
 
         //发送ping,返回pong
         if (PING_MSG == flag) {
+            in.skipBytes(HEAD_LEN);
             logger.debug(name + " Received 'PING' from: " + ctx.channel().remoteAddress());
             sendFlagMsg(ctx, PONG_MSG);
             heartbeatCount++;
@@ -59,6 +60,7 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
 
         //收到pong，打印后丢弃
         if (PONG_MSG == flag) {
+            in.skipBytes(HEAD_LEN);
             logger.debug(name + " Received 'PONG' from: " + ctx.channel().remoteAddress());
             return;
         }
@@ -69,24 +71,27 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
                 logger.debug(name + " Received 'CUSTOM' from: " + ctx.channel().remoteAddress()
                         + ",len:" + in.readableBytes());
             }
-            if (in.readableBytes() < len) {
-                in.resetReaderIndex();
+            if (in.readableBytes() - HEAD_LEN < len) {
                 return;
             }
+            in.skipBytes(HEAD_LEN);
             ByteBuf frame = ctx.alloc().buffer(len);
             frame.writeBytes(in, len);
             out.add(frame);
             return;
         }
 
-        if (in.readableBytes() < len) {
-            in.resetReaderIndex();
+        if (in.readableBytes() - HEAD_LEN < len) {
             return;
         }
-
+        in.skipBytes(HEAD_LEN);
 
         if (len > 0) {
+            int oldLen = in.readableBytes();
             decode(ctx, flag, in, len);
+            if (oldLen - in.readableBytes() != len) {
+                throw new CorruptedFrameException("Consume mismatch,flag=" + flag + ",len=" + len + ",but=" + (oldLen - in.readableBytes()));
+            }
             return;
         }
         decode(ctx, flag);
