@@ -20,25 +20,23 @@ public class CustomHeartbeatDecoder extends ReplayingDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        if (in.readableBytes() < CustomHeartbeatConst.HEAD_LEN) {
-            return;
-        }
-        int readerIdx = in.readerIndex();
-        int len = in.getInt(readerIdx);
-        byte flag = in.getByte(readerIdx + 4);
+        int len = in.readInt();
+        byte flag = in.readByte();
 
         //发送ping,返回pong
         if (CustomHeartbeatConst.PING_MSG == flag) {
-            in.skipBytes(CustomHeartbeatConst.HEAD_LEN);
-            logger.debug("Received 'PING' from: " + ctx);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Received 'PING' from: " + ctx);
+            }
             sendFlagMsg(ctx, CustomHeartbeatConst.PONG_MSG);
             return;
         }
 
         //收到pong，打印后丢弃
         if (CustomHeartbeatConst.PONG_MSG == flag) {
-            in.skipBytes(CustomHeartbeatConst.HEAD_LEN);
-            logger.debug("Received 'PONG' from: " + ctx);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Received 'PONG' from: " + ctx);
+            }
             return;
         }
 
@@ -47,26 +45,16 @@ public class CustomHeartbeatDecoder extends ReplayingDecoder {
             if (logger.isDebugEnabled()) {
                 logger.debug("Received 'CUSTOM' from: " + ctx + ",len:" + in.readableBytes());
             }
-            if (in.readableBytes() - CustomHeartbeatConst.HEAD_LEN < len) {
-                return;
-            }
-            in.skipBytes(CustomHeartbeatConst.HEAD_LEN);
-            ByteBuf frame = ctx.alloc().buffer(len);
-            frame.writeBytes(in, len);
-            out.add(frame);
+            out.add(in.readSlice(len).retain());
             return;
         }
-
-        if (in.readableBytes() - CustomHeartbeatConst.HEAD_LEN < len) {
-            return;
-        }
-        in.skipBytes(CustomHeartbeatConst.HEAD_LEN);
 
         if (len > 0) {
-            int oldLen = in.readableBytes();
+            int tmpLen = in.readableBytes();
             decode(ctx, flag, in, len);
-            if (oldLen - in.readableBytes() != len) {
-                throw new CorruptedFrameException("Consume mismatch,flag=" + flag + ",len=" + len + ",but=" + (oldLen - in.readableBytes()));
+            tmpLen -= in.readableBytes();
+            if (tmpLen != len) {
+                throw new CorruptedFrameException("Consume mismatch,flag=" + flag + ",len=" + len + ",but=" + tmpLen);
             }
             return;
         }
@@ -109,18 +97,26 @@ public class CustomHeartbeatDecoder extends ReplayingDecoder {
     }
 
     protected void handleAllIdle(ChannelHandlerContext ctx) {
-        logger.debug("Wait timeout:" + ctx);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Wait timeout:" + ctx);
+        }
         sendFlagMsg(ctx, CustomHeartbeatConst.PING_MSG);
-        logger.debug(" Send 'PING' to: " + ctx);
+        if (logger.isDebugEnabled()) {
+            logger.debug(" Send 'PING' to: " + ctx);
+        }
     }
 
     protected void handleReaderIdle(ChannelHandlerContext ctx) {
-        logger.debug("Read timeout:" + ctx);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Read timeout:" + ctx);
+        }
         ctx.close();
     }
 
     protected void handleWriterIdle(ChannelHandlerContext ctx) {
-        logger.debug("Write timeout:" + ctx);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Write timeout:" + ctx);
+        }
         ctx.close();
     }
 }
