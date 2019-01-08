@@ -1,6 +1,7 @@
 package com.whipfeng.net.heart.client;
 
-import com.whipfeng.net.heart.CustomHeartbeatCodec;
+import com.whipfeng.net.heart.CustomHeartbeatDecoder;
+import com.whipfeng.net.heart.CustomHeartbeatEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -10,7 +11,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
 
 import java.util.Random;
@@ -37,7 +37,8 @@ public class HeartClient {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ChannelPipeline p = ch.pipeline();
                             p.addLast(new IdleStateHandler(0, 0, 5));
-                            p.addLast(new CustomHeartbeatCodec("Client"));
+                            p.addLast(new CustomHeartbeatDecoder());
+                            p.addLast(new CustomHeartbeatEncoder());
                             p.addLast(new HeartClientHandler());
                         }
                     });

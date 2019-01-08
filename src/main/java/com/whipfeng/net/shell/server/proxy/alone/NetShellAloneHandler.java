@@ -1,8 +1,9 @@
 package com.whipfeng.net.shell.server.proxy.alone;
 
+import com.whipfeng.net.heart.CustomHeartbeatEncoder;
 import com.whipfeng.net.shell.ContextRouter;
 import com.whipfeng.net.shell.MsgExchangeHandler;
-import com.whipfeng.net.shell.server.proxy.NetShellProxyServerCodec;
+import com.whipfeng.net.shell.server.proxy.NetShellProxyServerDecoder;
 import com.whipfeng.net.shell.server.proxy.NetShellProxyServerQueue;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -32,7 +33,8 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
             Socks5CommandType cmdType = commandRequest.type();
             if (Socks5CommandType.BIND.equals(cmdType)) {
                 alCtx.pipeline().addLast(new IdleStateHandler(10, 0, 0))
-                        .addLast(new NetShellProxyServerCodec(bondQueue));
+                        .addLast(new NetShellProxyServerDecoder(bondQueue))
+                        .addLast(new CustomHeartbeatEncoder());
                 Socks5CommandResponse commandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4);
                 alCtx.writeAndFlush(commandResponse);
                 return;
@@ -45,11 +47,11 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
                     return;
                 }
                 ChannelHandlerContext nsCtx = nsRouter.getCtx();
-                logger.info("Match Net(A):" + nsCtx.channel().remoteAddress());
+                logger.info("Match Net(A):" + nsCtx);
                 Channel nsChannel = nsCtx.channel();
                 alCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
                 nsCtx.pipeline().addLast(new MsgExchangeHandler(alCtx.channel()));
-                nsCtx.pipeline().get(NetShellProxyServerCodec.class).sendReqMsg(nsRouter, outRouter);
+                nsCtx.pipeline().get(NetShellProxyServerDecoder.class).sendReqMsg(nsRouter, outRouter);
                 if (!nsChannel.isActive()) {
                     alCtx.close();
                 }

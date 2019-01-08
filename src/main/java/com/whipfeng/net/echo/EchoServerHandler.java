@@ -46,7 +46,7 @@ public class EchoServerHandler extends ChannelHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        System.out.println("I am lose!!!" + ctx.channel().remoteAddress());
+        System.out.println("I am lose!!!" + ctx);
         ctx.fireChannelInactive();
     }
 }

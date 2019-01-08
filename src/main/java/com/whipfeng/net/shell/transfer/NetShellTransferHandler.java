@@ -26,7 +26,7 @@ public class NetShellTransferHandler extends ChannelHandlerAdapter {
 
     @Override
     public void channelActive(final ChannelHandlerContext tsfCtx) {
-        logger.info("Connect OK:" + tsfCtx.channel().remoteAddress());
+        logger.info("Connect OK:" + tsfCtx);
         Bootstrap dstBootstrap = new Bootstrap();
         dstBootstrap.group(tsfCtx.channel().eventLoop().parent())
                 .channel(NioSocketChannel.class)

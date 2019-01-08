@@ -1,6 +1,7 @@
 package com.whipfeng.net.shell.server.proxy;
 
-import com.whipfeng.net.heart.CustomHeartbeatCodec;
+import com.whipfeng.net.heart.CustomHeartbeatConst;
+import com.whipfeng.net.heart.CustomHeartbeatDecoder;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.ContextRouter;
 import com.whipfeng.net.shell.RC4TransferHandler;
@@ -17,9 +18,9 @@ import java.io.UnsupportedEncodingException;
  * 网络外壳代理端编解码器
  * Created by fz on 2018/11/22.
  */
-public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
+public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
 
-    private static final Logger logger = LoggerFactory.getLogger(NetShellProxyServerCodec.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetShellProxyServerDecoder.class);
 
     private static final byte CONN_PRE_MSG = 4;
     private static final byte CONN_REQ_MSG = 5;
@@ -29,8 +30,7 @@ public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
 
     private NetShellProxyServerQueue bondQueue;
 
-    public NetShellProxyServerCodec(NetShellProxyServerQueue bondQueue) {
-        super("NS-Proxy-Server");
+    public NetShellProxyServerDecoder(NetShellProxyServerQueue bondQueue) {
         this.bondQueue = bondQueue;
     }
 
@@ -38,7 +38,7 @@ public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
     protected void decode(final ChannelHandlerContext ctx, byte flag) throws Exception {
         //响应连接
         if (CONN_ACK_MSG == flag) {
-            logger.debug(name + " Received(P) 'CONN_ACK' from: " + ctx.channel().remoteAddress());
+            logger.debug("Received(P) 'CONN_ACK' from: " + ctx);
             MsgExchangeHandler msgExchangeHandler = ctx.pipeline().get(MsgExchangeHandler.class);
             Channel outChannel = msgExchangeHandler.getChannel();
             Socks5CommandResponse commandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4);
@@ -65,15 +65,15 @@ public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
         }
         //連接前置任務
         if (CONN_PRE_MSG == flag && len == 8) {
-            logger.debug(name + " Received(P) 'CONN_PRE' from: " + nsCtx.channel().remoteAddress());
+            logger.debug("Received(P) 'CONN_PRE' from: " + nsCtx);
             int networkCode = in.readInt();
             int subMaskCode = in.readInt();
-            logger.info(name + " Received(P) 'CONN_PRE':" + networkCode + "," + subMaskCode);
+            logger.info("Received(P) 'CONN_PRE':" + networkCode + "," + subMaskCode);
             ContextRouter nsRouter = new ContextRouter(nsCtx, networkCode, subMaskCode);
             ContextRouter outRouter = bondQueue.matchNetOut(nsRouter);
             if (null != outRouter) {
                 ChannelHandlerContext outCtx = outRouter.getCtx();
-                logger.info("Match Net(P):" + outCtx.channel().remoteAddress());
+                logger.info("Match Net(P):" + outCtx);
                 Channel outChannel = outCtx.channel();
                 outCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
                 nsCtx.pipeline().addLast(new MsgExchangeHandler(outCtx.channel()));
@@ -91,7 +91,7 @@ public class NetShellProxyServerCodec extends CustomHeartbeatCodec {
         String inHost = outRouter.getCommandRequest().dstAddr();
         int inPort = outRouter.getCommandRequest().dstPort();
         byte[] buf = inHost.getBytes("UTF-8");
-        ByteBuf out = nsRouter.getCtx().alloc().buffer(HEAD_LEN + 2 + buf.length);
+        ByteBuf out = nsRouter.getCtx().alloc().buffer(CustomHeartbeatConst.HEAD_LEN + 2 + buf.length);
         out.writeInt(2 + buf.length);
         out.writeByte(CONN_REQ_MSG);
         out.writeByte((inPort >>> 8) & 255);

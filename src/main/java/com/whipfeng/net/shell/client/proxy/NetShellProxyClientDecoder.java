@@ -1,6 +1,7 @@
 package com.whipfeng.net.shell.client.proxy;
 
-import com.whipfeng.net.heart.CustomHeartbeatCodec;
+import com.whipfeng.net.heart.CustomHeartbeatConst;
+import com.whipfeng.net.heart.CustomHeartbeatDecoder;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.RC4TransferHandler;
 import com.whipfeng.util.RSAUtil;
@@ -18,9 +19,9 @@ import java.util.concurrent.BlockingQueue;
  * 网络外壳客户端编解码器
  * Created by user on 2018/11/22.
  */
-public class NetShellProxyClientCodec extends CustomHeartbeatCodec {
+public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
 
-    private static final Logger logger = LoggerFactory.getLogger(NetShellProxyClientCodec.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetShellProxyClientDecoder.class);
 
     private static final byte CONN_PRE_MSG = 4;
     private static final byte CONN_REQ_MSG = 5;
@@ -28,15 +29,14 @@ public class NetShellProxyClientCodec extends CustomHeartbeatCodec {
     private static final byte PW_EX_REQ_MSG = 7;
     private static final byte PW_EX_ACK_MSG = 8;
 
-    private BlockingQueue<NetShellProxyClientCodec> blockingQueue;
+    private BlockingQueue<NetShellProxyClientDecoder> blockingQueue;
 
     private int networkCode;
     private int subMaskCode;
 
     private RC4TransferHandler rc4Codec;
 
-    public NetShellProxyClientCodec(BlockingQueue<NetShellProxyClientCodec> blockingQueue, int networkCode, int subMaskCode) {
-        super("NS-Proxy-Client");
+    public NetShellProxyClientDecoder(BlockingQueue<NetShellProxyClientDecoder> blockingQueue, int networkCode, int subMaskCode) {
         this.blockingQueue = blockingQueue;
         this.networkCode = networkCode;
         this.subMaskCode = subMaskCode;
@@ -56,10 +56,10 @@ public class NetShellProxyClientCodec extends CustomHeartbeatCodec {
     protected void decode(final ChannelHandlerContext nsCtx, byte flag, ByteBuf in, int len) throws Exception {
         //连接請求
         if (CONN_REQ_MSG == flag && len > 2) {
-            logger.debug(name + " Received 'CONN_REQ' from: " + nsCtx.channel().remoteAddress());
+            logger.debug("Received 'CONN_REQ' from: " + nsCtx);
 
             boolean result = blockingQueue.remove(this);
-            logger.info(result + " Finish Connect(P):" + nsCtx.channel().localAddress());
+            logger.info(result + " Finish Connect(P):" + nsCtx);
 
             Bootstrap inBootstrap = new Bootstrap();
             inBootstrap.group(nsCtx.channel().eventLoop().parent())
@@ -127,7 +127,7 @@ public class NetShellProxyClientCodec extends CustomHeartbeatCodec {
         rc4Codec = new RC4TransferHandler(key);
         key = RSAUtil.publicEncrypt(key);
         //随机生成并写出密码
-        ByteBuf out = ctx.alloc().buffer(HEAD_LEN + key.length);
+        ByteBuf out = ctx.alloc().buffer(CustomHeartbeatConst.HEAD_LEN + key.length);
         out.writeInt(key.length);
         out.writeByte(PW_EX_REQ_MSG);
         out.writeBytes(key);
@@ -136,7 +136,7 @@ public class NetShellProxyClientCodec extends CustomHeartbeatCodec {
 
     private void sendPreMsg(ChannelHandlerContext ctx) {
         //连接成功发送网络号和子网掩码
-        ByteBuf out = ctx.alloc().buffer(HEAD_LEN + 8);
+        ByteBuf out = ctx.alloc().buffer(CustomHeartbeatConst.HEAD_LEN + 8);
         out.writeInt(8);
         out.writeByte(CONN_PRE_MSG);
         out.writeInt(networkCode);
@@ -148,7 +148,7 @@ public class NetShellProxyClientCodec extends CustomHeartbeatCodec {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         boolean result = blockingQueue.remove(this);
-        logger.info(result + " Lost Connect:" + ctx.channel().localAddress());
+        logger.info(result + " Lost Connect:" + ctx);
         ctx.fireChannelInactive();
     }
 }

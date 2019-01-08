@@ -1,5 +1,6 @@
 package com.whipfeng.net.shell.server.proxy;
 
+import com.whipfeng.net.heart.CustomHeartbeatEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -48,7 +49,8 @@ public class NetShellProxyServer {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
                                     .addLast(new IdleStateHandler(10, 0, 0))
-                                    .addLast(new NetShellProxyServerCodec(bondQueue));
+                                    .addLast(new NetShellProxyServerDecoder(bondQueue))
+                                    .addLast(new CustomHeartbeatEncoder());
                         }
                     });
 

@@ -1,6 +1,6 @@
 package com.whipfeng.net.shell.client;
 
-import com.whipfeng.net.heart.CustomHeartbeatCodec;
+import com.whipfeng.net.heart.CustomHeartbeatDecoder;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -15,19 +15,18 @@ import java.util.concurrent.BlockingQueue;
  * 网络外壳客户端编解码器
  * Created by user on 2018/11/22.
  */
-public class NetShellClientCodec extends CustomHeartbeatCodec {
+public class NetShellClientDecoder extends CustomHeartbeatDecoder {
 
-    private static final Logger logger = LoggerFactory.getLogger(NetShellClientCodec.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetShellClientDecoder.class);
 
     private static final byte CONN_REQ_MSG = 4;
     private static final byte CONN_ACK_MSG = 5;
 
-    private BlockingQueue<NetShellClientCodec> blockingQueue;
+    private BlockingQueue<NetShellClientDecoder> blockingQueue;
     private String inHost;
     private int inPort;
 
-    public NetShellClientCodec(BlockingQueue<NetShellClientCodec> blockingQueue, String inHost, int inPort) {
-        super("NS-Client");
+    public NetShellClientDecoder(BlockingQueue<NetShellClientDecoder> blockingQueue, String inHost, int inPort) {
         this.blockingQueue = blockingQueue;
         this.inHost = inHost;
         this.inPort = inPort;
@@ -37,10 +36,10 @@ public class NetShellClientCodec extends CustomHeartbeatCodec {
     protected void decode(final ChannelHandlerContext nsCtx, byte flag) throws Exception {
         //请求连接
         if (CONN_REQ_MSG == flag) {
-            logger.debug(name + " Received 'CONN_REQ' from: " + nsCtx.channel().remoteAddress());
+            logger.debug("Received 'CONN_REQ' from: " + nsCtx);
 
             boolean result = blockingQueue.remove(this);
-            logger.info(result + " Finish Connect:" + nsCtx.channel().localAddress());
+            logger.info(result + " Finish Connect:" + nsCtx);
 
             Bootstrap inBootstrap = new Bootstrap();
             inBootstrap.group(nsCtx.channel().eventLoop().parent())
@@ -85,7 +84,7 @@ public class NetShellClientCodec extends CustomHeartbeatCodec {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         boolean result = blockingQueue.remove(this);
-        logger.info(result + " Lost Connect:" + ctx.channel().localAddress());
+        logger.info(result + " Lost Connect:" + ctx);
         ctx.fireChannelInactive();
     }
 }

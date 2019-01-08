@@ -20,7 +20,7 @@ public class HeartClientHandler extends ChannelHandlerAdapter {
             byte[] data = new byte[in.readableBytes()];
             in.readBytes(data);
             String content = new String(data);
-            logger.debug("<-获取内容：" + content + "，从" + ctx.channel().remoteAddress());
+            logger.debug("<-获取内容：" + content + "，从" + ctx);
         }
     }
 }

@@ -23,14 +23,14 @@ public class NetShellServerHandler extends ChannelHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext outCtx) {
-        logger.info("Connect OK:" + outCtx.channel().remoteAddress());
+        logger.info("Connect OK:" + outCtx);
         ChannelHandlerContext nsCtx = bondQueue.matchNetShell(outCtx);
         if (null != nsCtx) {
-            logger.info("Match Net:" + nsCtx.channel().remoteAddress());
+            logger.info("Match Net:" + nsCtx);
             Channel nsChannel = nsCtx.channel();
             outCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
             nsCtx.pipeline().addLast(new MsgExchangeHandler(outCtx.channel()));
-            nsCtx.pipeline().get(NetShellServerCodec.class).sendFlagMsg(nsCtx, NetShellServerCodec.CONN_REQ_MSG);
+            nsCtx.pipeline().get(NetShellServerDecoder.class).sendFlagMsg(nsCtx, NetShellServerDecoder.CONN_REQ_MSG);
             if (!nsChannel.isActive()) {
                 outCtx.close();
             }

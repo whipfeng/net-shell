@@ -1,6 +1,7 @@
 package com.whipfeng.net.heart.server;
 
-import com.whipfeng.net.heart.CustomHeartbeatCodec;
+import com.whipfeng.net.heart.CustomHeartbeatDecoder;
+import com.whipfeng.net.heart.CustomHeartbeatEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -29,7 +30,8 @@ public class HeartServer {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ChannelPipeline p = ch.pipeline();
                             p.addLast(new IdleStateHandler(10, 0, 0));
-                            p.addLast(new CustomHeartbeatCodec("Server"));
+                            p.addLast(new CustomHeartbeatDecoder());
+                            p.addLast(new CustomHeartbeatEncoder());
                             p.addLast(new HeartServerHandler());
                         }
                     })

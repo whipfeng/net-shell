@@ -1,6 +1,7 @@
 package com.whipfeng.net.shell.client.proxy.alone;
 
-import com.whipfeng.net.shell.client.proxy.NetShellProxyClientCodec;
+import com.whipfeng.net.heart.CustomHeartbeatEncoder;
+import com.whipfeng.net.shell.client.proxy.NetShellProxyClientDecoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -39,7 +40,7 @@ public class NetShellAloneClient {
 
     private boolean running = true;
 
-    private BlockingQueue<NetShellProxyClientCodec> blockingQueue = new ArrayBlockingQueue(1);
+    private BlockingQueue<NetShellProxyClientDecoder> blockingQueue = new ArrayBlockingQueue(1);
 
     public NetShellAloneClient(String alHost, int alPort, String username, String password, int networkCode, int subMaskCode) {
         this.alHost = alHost;
@@ -54,8 +55,8 @@ public class NetShellAloneClient {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             while (running) {
-                final NetShellProxyClientCodec netShellClientCodec = new NetShellProxyClientCodec(blockingQueue, networkCode, subMaskCode);
-                blockingQueue.put(netShellClientCodec);
+                final NetShellProxyClientDecoder netShellClientDecoder = new NetShellProxyClientDecoder(blockingQueue, networkCode, subMaskCode);
+                blockingQueue.put(netShellClientDecoder);
                 Bootstrap alBootstrap = new Bootstrap();
                 alBootstrap.group(workerGroup)
                         .channel(NioSocketChannel.class)
@@ -69,7 +70,8 @@ public class NetShellAloneClient {
                                         .addLast(new Socks5PasswordAuthResponseHandler())
                                         .addLast(new Socks5CommandResponseDecoder())
                                         .addLast(new NetShellAloneHandler())
-                                        .addLast("N-S-C-C", netShellClientCodec);
+                                        .addLast("N-S-C-C", netShellClientDecoder)
+                                        .addLast(new CustomHeartbeatEncoder());
                             }
                         });
 
@@ -78,11 +80,11 @@ public class NetShellAloneClient {
                     public void operationComplete(ChannelFuture future) {
                         if (future.isSuccess()) {
                             stopTime = 0;
-                            logger.info("Connect OK(A):" + future.channel().localAddress());
+                            logger.info("Connect OK(A):" + future);
                         } else {
                             stopTime = 30000;//睡30秒再来
-                            boolean result = blockingQueue.remove(netShellClientCodec);
-                            logger.info(result + " Lost Connect:" + future.channel().localAddress());
+                            boolean result = blockingQueue.remove(netShellClientDecoder);
+                            logger.info(result + " Lost Connect:" + future);
                             logger.error("Connect fail, will try again.", future.cause());
                         }
                     }

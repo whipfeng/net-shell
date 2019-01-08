@@ -1,5 +1,6 @@
 package com.whipfeng.net.shell.client;
 
+import com.whipfeng.net.heart.CustomHeartbeatEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -30,7 +31,7 @@ public class NetShellClient {
 
     private boolean running = true;
 
-    private BlockingQueue<NetShellClientCodec> blockingQueue = new ArrayBlockingQueue(1);
+    private BlockingQueue<NetShellClientDecoder> blockingQueue = new ArrayBlockingQueue(1);
 
     public NetShellClient(String nsHost, int nsPort, String inHost, int inPort) {
         this.nsHost = nsHost;
@@ -43,7 +44,7 @@ public class NetShellClient {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             while (running) {
-                final NetShellClientCodec netShellClientCodec = new NetShellClientCodec(blockingQueue, inHost, inPort);
+                final NetShellClientDecoder netShellClientCodec = new NetShellClientDecoder(blockingQueue, inHost, inPort);
                 blockingQueue.put(netShellClientCodec);
                 Bootstrap nsBootstrap = new Bootstrap();
                 nsBootstrap.group(workerGroup)
@@ -52,7 +53,8 @@ public class NetShellClient {
                             public void initChannel(SocketChannel ch) throws Exception {
                                 ch.pipeline()
                                         .addLast(new IdleStateHandler(0, 0, 5))
-                                        .addLast(netShellClientCodec);
+                                        .addLast(netShellClientCodec)
+                                        .addLast(new CustomHeartbeatEncoder());
                             }
                         });
 
@@ -61,11 +63,11 @@ public class NetShellClient {
                     public void operationComplete(ChannelFuture future) {
                         if (future.isSuccess()) {
                             stopTime = 0;
-                            logger.info("Connect OK:" + future.channel().localAddress());
+                            logger.info("Connect OK:" + future);
                         } else {
                             stopTime = 30000;//睡30秒再来
                             boolean result = blockingQueue.remove(netShellClientCodec);
-                            logger.info(result + " Lost Connect:" + future.channel().localAddress());
+                            logger.info(result + " Lost Connect:" + future);
                             logger.error("Connect fail, will try again.", future.cause());
                         }
                     }

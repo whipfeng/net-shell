@@ -3,8 +3,8 @@ package com.whipfeng.net.heart;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.CorruptedFrameException;
+import io.netty.handler.codec.ReplayingDecoder;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,33 +14,13 @@ import java.util.List;
 /**
  * Created by fz on 2018/11/20.
  */
-public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
+public class CustomHeartbeatDecoder extends ReplayingDecoder {
 
-    private static final Logger logger = LoggerFactory.getLogger(CustomHeartbeatCodec.class);
-
-    protected static final byte HEAD_LEN = 5;
-
-    protected static final byte PING_MSG = 1;
-    protected static final byte PONG_MSG = 2;
-    protected static final byte CUSTOM_MSG = 3;
-
-    protected String name;
-    protected int heartbeatCount = 0;
-
-    public CustomHeartbeatCodec(String name) {
-        this.name = name;
-    }
-
-    @Override
-    protected void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
-        out.writeInt(in.readableBytes());
-        out.writeByte(CUSTOM_MSG);
-        out.writeBytes(in);
-    }
+    private static final Logger logger = LoggerFactory.getLogger(CustomHeartbeatDecoder.class);
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        if (in.readableBytes() < HEAD_LEN) {
+        if (in.readableBytes() < CustomHeartbeatConst.HEAD_LEN) {
             return;
         }
         int readerIdx = in.readerIndex();
@@ -48,43 +28,39 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
         byte flag = in.getByte(readerIdx + 4);
 
         //发送ping,返回pong
-        if (PING_MSG == flag) {
-            in.skipBytes(HEAD_LEN);
-            logger.debug(name + " Received 'PING' from: " + ctx.channel().remoteAddress());
-            sendFlagMsg(ctx, PONG_MSG);
-            heartbeatCount++;
-            logger.debug(name + " Send 'PONG' to: " + ctx.channel().remoteAddress()
-                    + ",HeartbeatCount:" + heartbeatCount);
+        if (CustomHeartbeatConst.PING_MSG == flag) {
+            in.skipBytes(CustomHeartbeatConst.HEAD_LEN);
+            logger.debug("Received 'PING' from: " + ctx);
+            sendFlagMsg(ctx, CustomHeartbeatConst.PONG_MSG);
             return;
         }
 
         //收到pong，打印后丢弃
-        if (PONG_MSG == flag) {
-            in.skipBytes(HEAD_LEN);
-            logger.debug(name + " Received 'PONG' from: " + ctx.channel().remoteAddress());
+        if (CustomHeartbeatConst.PONG_MSG == flag) {
+            in.skipBytes(CustomHeartbeatConst.HEAD_LEN);
+            logger.debug("Received 'PONG' from: " + ctx);
             return;
         }
 
         //收到应用消息
-        if (CUSTOM_MSG == flag) {
+        if (CustomHeartbeatConst.CUSTOM_MSG == flag) {
             if (logger.isDebugEnabled()) {
-                logger.debug(name + " Received 'CUSTOM' from: " + ctx.channel().remoteAddress()
-                        + ",len:" + in.readableBytes());
+                logger.debug("Received 'CUSTOM' from: " + ctx + ",len:" + in.readableBytes());
             }
-            if (in.readableBytes() - HEAD_LEN < len) {
+            if (in.readableBytes() - CustomHeartbeatConst.HEAD_LEN < len) {
                 return;
             }
-            in.skipBytes(HEAD_LEN);
+            in.skipBytes(CustomHeartbeatConst.HEAD_LEN);
             ByteBuf frame = ctx.alloc().buffer(len);
             frame.writeBytes(in, len);
             out.add(frame);
             return;
         }
 
-        if (in.readableBytes() - HEAD_LEN < len) {
+        if (in.readableBytes() - CustomHeartbeatConst.HEAD_LEN < len) {
             return;
         }
-        in.skipBytes(HEAD_LEN);
+        in.skipBytes(CustomHeartbeatConst.HEAD_LEN);
 
         if (len > 0) {
             int oldLen = in.readableBytes();
@@ -126,27 +102,25 @@ public class CustomHeartbeatCodec extends ByteToMessageCodec<ByteBuf> {
     }
 
     public ChannelFuture sendFlagMsg(ChannelHandlerContext ctx, byte flag) {
-        ByteBuf out = ctx.alloc().buffer(HEAD_LEN);
+        ByteBuf out = ctx.alloc().buffer(CustomHeartbeatConst.HEAD_LEN);
         out.writeInt(0);
         out.writeByte(flag);
         return ctx.writeAndFlush(out);
     }
 
     protected void handleAllIdle(ChannelHandlerContext ctx) {
-        logger.debug("Wait timeout:" + ctx.channel().remoteAddress());
-        sendFlagMsg(ctx, PING_MSG);
-        heartbeatCount++;
-        logger.debug(name + " Send 'PING' to: " + ctx.channel().remoteAddress()
-                + ",HeartbeatCount:" + heartbeatCount);
+        logger.debug("Wait timeout:" + ctx);
+        sendFlagMsg(ctx, CustomHeartbeatConst.PING_MSG);
+        logger.debug(" Send 'PING' to: " + ctx);
     }
 
     protected void handleReaderIdle(ChannelHandlerContext ctx) {
-        logger.debug("Read timeout:" + ctx.channel().remoteAddress());
+        logger.debug("Read timeout:" + ctx);
         ctx.close();
     }
 
     protected void handleWriterIdle(ChannelHandlerContext ctx) {
-        logger.debug("Write timeout:" + ctx.channel().remoteAddress());
+        logger.debug("Write timeout:" + ctx);
         ctx.close();
     }
 }

@@ -31,13 +31,13 @@ public class MsgExchangeHandler extends ChannelHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        logger.info("Disconnect OK:" + ctx.channel().remoteAddress());
+        logger.info("Disconnect OK:" + ctx);
         channel.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.info("Disconnect forced:" + ctx.channel().remoteAddress(), cause);
+        logger.info("Disconnect forced:" + ctx, cause);
         channel.close();
         ctx.close();
     }

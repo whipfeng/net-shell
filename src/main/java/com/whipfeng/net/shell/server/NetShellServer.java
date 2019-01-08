@@ -1,5 +1,6 @@
 package com.whipfeng.net.shell.server;
 
+import com.whipfeng.net.heart.CustomHeartbeatEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -39,7 +40,8 @@ public class NetShellServer {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
                                     .addLast(new IdleStateHandler(10, 0, 0))
-                                    .addLast(new NetShellServerCodec(bondQueue));
+                                    .addLast(new NetShellServerDecoder(bondQueue))
+                                    .addLast(new CustomHeartbeatEncoder());
                         }
                     });
 

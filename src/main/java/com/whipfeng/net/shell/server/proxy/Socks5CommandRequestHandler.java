@@ -30,11 +30,11 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                 return;
             }
             ChannelHandlerContext nsCtx = nsRouter.getCtx();
-            logger.info("Match Net:" + nsCtx.channel().remoteAddress());
+            logger.info("Match Net:" + nsCtx);
             Channel nsChannel = nsCtx.channel();
             outCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
             nsCtx.pipeline().addLast(new MsgExchangeHandler(outCtx.channel()));
-            nsCtx.pipeline().get(NetShellProxyServerCodec.class).sendReqMsg(nsRouter, outRouter);
+            nsCtx.pipeline().get(NetShellProxyServerDecoder.class).sendReqMsg(nsRouter, outRouter);
             if (!nsChannel.isActive()) {
                 outCtx.close();
             }

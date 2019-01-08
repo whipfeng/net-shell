@@ -36,7 +36,7 @@ public class NetShellProxyTransferHandler extends ChannelHandlerAdapter {
 
     @Override
     public void channelActive(final ChannelHandlerContext tsfCtx) {
-        logger.info("Connect OK:" + tsfCtx.channel().remoteAddress());
+        logger.info("Connect OK:" + tsfCtx);
         Bootstrap proxyBootstrap = new Bootstrap();
         proxyBootstrap.group(tsfCtx.channel().eventLoop().parent())
                 .channel(NioSocketChannel.class)
