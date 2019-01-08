@@ -28,7 +28,8 @@ public class HttpProxyServer {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
-                                    .addLast(new HttpServerCodec())
+                                    .addLast(new HttpProxyEncoder())
+                                    .addLast(new HttpProxyDecoder())
                                     .addLast(new HttpProxyHandler());
                         }
                     })

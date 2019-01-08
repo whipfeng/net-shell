@@ -43,23 +43,22 @@ public class CustomHeartbeatDecoder extends ReplayingDecoder {
         //收到应用消息
         if (CustomHeartbeatConst.CUSTOM_MSG == flag) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Received 'CUSTOM' from: " + ctx + ",len:" + in.readableBytes());
+                logger.debug("Received 'CUSTOM' from: " + ctx + ",len:" + actualReadableBytes());
             }
             out.add(in.readSlice(len).retain());
             return;
         }
 
         if (len > 0) {
-            int tmpLen = in.readableBytes();
+            int tmpLen = actualReadableBytes();
             decode(ctx, flag, in, len);
-            tmpLen -= in.readableBytes();
+            tmpLen -= actualReadableBytes();
             if (tmpLen != len) {
                 throw new CorruptedFrameException("Consume mismatch,flag=" + flag + ",len=" + len + ",but=" + tmpLen);
             }
             return;
         }
         decode(ctx, flag);
-
     }
 
     protected void decode(ChannelHandlerContext ctx, byte flag, ByteBuf in, int len) throws Exception {

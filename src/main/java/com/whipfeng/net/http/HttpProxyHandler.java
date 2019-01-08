@@ -1,17 +1,66 @@
 package com.whipfeng.net.http;
 
-import io.netty.channel.ChannelHandlerAdapter;
-import io.netty.channel.ChannelHandlerContext;
+import com.whipfeng.net.shell.MsgExchangeHandler;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.*;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Created by cmll on 2019/1/4.
  */
-public class HttpProxyHandler extends ChannelHandlerAdapter {
+public class HttpProxyHandler extends SimpleChannelInboundHandler<HttpProxyRequest> {
     private static final Logger logger = LoggerFactory.getLogger(HttpProxyHandler.class);
+
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        logger.debug(msg.toString());
+    public void messageReceived(final ChannelHandlerContext hpCtx, final HttpProxyRequest request) throws Exception {
+        logger.info("Connect OK:" + request + hpCtx);
+
+        Bootstrap dstBootstrap = new Bootstrap();
+        dstBootstrap.group(hpCtx.channel().eventLoop().parent())
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    public void initChannel(SocketChannel ch) throws Exception {
+                        ch.pipeline()
+                                .addLast(new MsgExchangeHandler(hpCtx.channel()));
+                    }
+                });
+        ChannelFuture dstFuture = dstBootstrap.remoteAddress(request.getHost(), request.getPort()).connect();
+
+        //异步等待连接结果
+        dstFuture.addListener(new ChannelFutureListener() {
+            public void operationComplete(ChannelFuture dstFuture) {
+                if (dstFuture.isSuccess()) {
+                    Channel dstChannel = dstFuture.channel();
+                    Channel hpChannel = hpCtx.channel();
+                    logger.info("Finish Connect:" + dstChannel);
+
+                    //响应连接
+                    if (HttpProxyConst.METHOD_CONNECT == request.getMethod()) {
+                        hpCtx.pipeline().addLast(new MsgExchangeHandler(dstChannel));
+                        hpChannel.writeAndFlush(new HttpProxyResponse());
+                    } else {
+                        ByteBuf buf = dstChannel.alloc().buffer(request.getCache().length);
+                        buf.writeBytes(request.getCache());
+                        dstChannel.writeAndFlush(buf);
+                        hpCtx.pipeline().addLast(new MsgExchangeHandler(dstChannel));
+                        hpChannel.config().setAutoRead(true);
+                        hpChannel.read();
+                    }
+
+                    //如果代理网络已经挂了，则直接关闭外部网络
+                    if (!hpChannel.isActive()) {
+                        dstChannel.close();
+                    }
+                } else {
+                    //如果内部网络没成功，则直接关闭代理网络
+                    hpCtx.close();
+                }
+            }
+        });
     }
 }

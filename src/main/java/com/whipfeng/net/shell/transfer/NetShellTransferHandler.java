@@ -46,7 +46,7 @@ public class NetShellTransferHandler extends ChannelHandlerAdapter {
                     Channel dstChannel = dstFuture.channel();
                     Channel tsfChannel = tsfCtx.channel();
 
-                    logger.info("Finish Connect:" + dstChannel.localAddress());
+                    logger.info("Finish Connect:" + dstChannel);
 
                     tsfCtx.pipeline().addLast(new MsgExchangeHandler(dstChannel));
                     //响应连接
