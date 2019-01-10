@@ -14,10 +14,9 @@ public class HttpProxyEncoder extends MessageToByteEncoder<HttpProxyResponse> {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpProxyEncoder.class);
 
-    private static byte[] CONNECT_OK = "HTTP/1.1 200 Connection Established\r\n\r\n".getBytes();
 
     @Override
     protected void encode(ChannelHandlerContext ctx, HttpProxyResponse response, ByteBuf out) throws Exception {
-        out.writeBytes(CONNECT_OK);
+        out.writeBytes(response.getAck());
     }
 }

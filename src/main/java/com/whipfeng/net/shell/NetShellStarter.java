@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 网络外壳服务端，监听外部网络和外壳网络
@@ -172,24 +174,60 @@ public class NetShellStarter {
         }
     }
 
+
     private static PasswordAuth getPasswordAuth(final String authFilePath) {
-        return new PasswordAuth() {
-            @Override
-            public boolean auth(String user, String password) throws Exception {
-                String up = user + "/" + password;
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(authFilePath)));
-                try {
-                    String line;
-                    while (null != (line = br.readLine())) {
-                        if (up.equals(line)) {
-                            return true;
-                        }
-                    }
-                } finally {
-                    br.close();
+        return new RefreshPasswordAuth(authFilePath);
+    }
+
+    private static class RefreshPasswordAuth extends Thread implements PasswordAuth {
+
+        private String authFilePath;
+
+        private RefreshPasswordAuth(final String authFilePath) {
+            this.authFilePath = authFilePath;
+            refresh();
+            this.start();
+        }
+
+        private Map<String, String> passwordMap;
+
+        private void refresh() {
+            Map<String, String> pwMap = new HashMap<String, String>();
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(authFilePath)));
+                String line;
+                while (null != (line = br.readLine())) {
+                    String[] lineSplit = line.split("/", -1);
+                    pwMap.put(lineSplit[0], lineSplit[1]);
                 }
-                return false;
+                passwordMap = pwMap;
+            } catch (Exception e) {
+                logger.error("Unread any user info." + authFilePath, e);
+            } finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    } catch (IOException e) {
+                    }
+                }
             }
-        };
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                }
+                refresh();
+            }
+        }
+
+        @Override
+        public String findPassword(String user) throws Exception {
+            return passwordMap.get(user);
+        }
     }
 }

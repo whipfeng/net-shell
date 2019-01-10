@@ -1,6 +1,6 @@
 package com.whipfeng.net.http;
 
-import com.whipfeng.net.echo.EchoServerHandler;
+import com.whipfeng.net.shell.server.proxy.PasswordAuth;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -9,13 +9,14 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.HttpServerCodec;
 
 public class HttpProxyServer {
     private int port;
+    private PasswordAuth passwordAuth;
 
-    public HttpProxyServer(int port) {
+    public HttpProxyServer(int port, PasswordAuth passwordAuth) {
         this.port = port;
+        this.passwordAuth = passwordAuth;
     }
 
     public void run() throws Exception {
@@ -29,7 +30,7 @@ public class HttpProxyServer {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
                                     .addLast(new HttpProxyEncoder())
-                                    .addLast(new HttpProxyDecoder())
+                                    .addLast(new HttpProxyDecoder(passwordAuth))
                                     .addLast(new HttpProxyHandler());
                         }
                     })

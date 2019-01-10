@@ -18,7 +18,6 @@ public class HttpProxyHandler extends SimpleChannelInboundHandler<HttpProxyReque
     @Override
     public void messageReceived(final ChannelHandlerContext hpCtx, final HttpProxyRequest request) throws Exception {
         logger.info("Connect OK:" + request + hpCtx);
-
         Bootstrap dstBootstrap = new Bootstrap();
         dstBootstrap.group(hpCtx.channel().eventLoop().parent())
                 .channel(NioSocketChannel.class)
@@ -39,18 +38,19 @@ public class HttpProxyHandler extends SimpleChannelInboundHandler<HttpProxyReque
                     Channel hpChannel = hpCtx.channel();
                     logger.info("Finish Connect:" + dstChannel);
 
-                    //响应连接
-                    if (HttpProxyConst.METHOD_CONNECT == request.getMethod()) {
-                        hpCtx.pipeline().addLast(new MsgExchangeHandler(dstChannel));
-                        hpChannel.writeAndFlush(new HttpProxyResponse());
-                    } else {
+                    if (request.getCache().length > 0) {
                         ByteBuf buf = dstChannel.alloc().buffer(request.getCache().length);
                         buf.writeBytes(request.getCache());
                         dstChannel.writeAndFlush(buf);
-                        hpCtx.pipeline().addLast(new MsgExchangeHandler(dstChannel));
-                        hpChannel.config().setAutoRead(true);
-                        hpChannel.read();
                     }
+                    hpCtx.pipeline().addLast(new MsgExchangeHandler(dstChannel));
+                    //响应连接
+                    if ("CONNECT".equals(request.getMethod())) {
+                        hpChannel.writeAndFlush(HttpProxyResponse.buildConnectEstablished(request.getVersion()));
+                    }
+
+                    hpChannel.config().setAutoRead(true);
+                    hpChannel.read();
 
                     //如果代理网络已经挂了，则直接关闭外部网络
                     if (!hpChannel.isActive()) {

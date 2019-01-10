@@ -53,8 +53,8 @@ public class NetShellTest {
 
         PasswordAuth pa = new PasswordAuth() {
             @Override
-            public boolean auth(String user, String password) {
-                return "migu_log".equals(user) && "migu_log123!".equals(password);
+            public String findPassword(String user) {
+                return "migu_log".equals(user) ? "migu_log123!" : null;
             }
         };
 
@@ -77,8 +77,8 @@ public class NetShellTest {
 
         PasswordAuth pa = new PasswordAuth() {
             @Override
-            public boolean auth(String user, String password) {
-                return "migu_log".equals(user) && "migu_log123!".equals(password);
+            public String findPassword(String user) {
+                return "migu_log".equals(user) ? "migu_log123!" : null;
             }
         };
 
