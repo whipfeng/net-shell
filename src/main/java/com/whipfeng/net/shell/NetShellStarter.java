@@ -15,8 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * 网络外壳服务端，监听外部网络和外壳网络
@@ -51,7 +54,7 @@ public class NetShellStarter {
          * java -jar net-shell-1.0-SNAPSHOT.jar -m client -nsHost localhost -nsPort 8808 -inHost 10.21.20.229 -inPort 22
          * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.server -nsPort 8808 -outPort 9099 -needAuth true -authFilePath E:\workspace_myself\net-shell\target\AuthList.txt
          * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.client -nsHost localhost -nsPort 8808 -network.code 0.0.0.0 -sub.mask.code 0.0.0.0
-         * java -jar net-shell-1.0-SNAPSHOT.jar -m alone.server -alPort 8808 -needAuth true -authFilePath E:\workspace_myself\net-shell\target\AuthList.txt
+         * java -jar net-shell-1.0-SNAPSHOT.jar -m alone.server -alPort 8808 -needAuth true -authFilePath E:\workspace_myself\net-shell\target\AuthList.txt -matchFilePath E:\xxx.txt
          * java -jar net-shell-1.0-SNAPSHOT.jar -m alone.client -alHost localhost -alPort 8808 -username xxx -password xxx -network.code 0.0.0.0 -sub.mask.code 0.0.0.0
          * java -jar net-shell-1.0-SNAPSHOT.jar -m transfer -tsfPort 9099 -dstHost 10.21.20.229 -dstPort 22
          * java -jar net-shell-1.0-SNAPSHOT.jar -m proxy.transfer -tsfPort 9099 -proxyHost localhost -proxyPort 8000 -username xxx -password xxx -dstHost 10.21.20.229 -dstPort 9666
@@ -82,17 +85,18 @@ public class NetShellStarter {
             int outPort = argsUtil.get("-outPort", 9099);
 
             boolean isNeedAuth = argsUtil.get("-needAuth", false);
-            final String authFilePath = argsUtil.get("-authFilePath", null);
+            String authFilePath = argsUtil.get("-authFilePath", null);
+            String matchFilePath = argsUtil.get("-matchFilePath", null);
 
             logger.info("nsPort=" + nsPort);
             logger.info("outPort=" + outPort);
             logger.info("isNeedAuth=" + isNeedAuth);
             logger.info("authFilePath=" + authFilePath);
+            logger.info("matchFilePath=" + matchFilePath);
 
-
-            PasswordAuth passwordAuth = getPasswordAuth(authFilePath);
-
-            NetShellProxyServer netShellProxyServer = new NetShellProxyServer(nsPort, outPort, isNeedAuth, passwordAuth);
+            AnyTimerTask anyTimerTask = new AnyTimerTask(authFilePath, matchFilePath);
+            ContextRouter.setMatcher(anyTimerTask);
+            NetShellProxyServer netShellProxyServer = new NetShellProxyServer(nsPort, outPort, isNeedAuth, anyTimerTask);
             netShellProxyServer.run();
         } else if ("proxy.client".equals(mode)) {
             String nsHost = argsUtil.get("-nsHost", "localhost");
@@ -115,21 +119,23 @@ public class NetShellStarter {
             int alPort = argsUtil.get("-alPort", 8088);
 
             boolean isNeedAuth = argsUtil.get("-needAuth", false);
-            final String authFilePath = argsUtil.get("-authFilePath", null);
+            String authFilePath = argsUtil.get("-authFilePath", null);
+            String matchFilePath = argsUtil.get("-matchFilePath", null);
 
             logger.info("alPort=" + alPort);
             logger.info("isNeedAuth=" + isNeedAuth);
             logger.info("authFilePath=" + authFilePath);
+            logger.info("matchFilePath=" + matchFilePath);
 
-
-            PasswordAuth passwordAuth = getPasswordAuth(authFilePath);
-
-            NetShellAloneServer netShellAloneServer = new NetShellAloneServer(alPort, isNeedAuth, passwordAuth);
+            AnyTimerTask anyTimerTask = new AnyTimerTask(authFilePath, matchFilePath);
+            ContextRouter.setMatcher(anyTimerTask);
+            NetShellAloneServer netShellAloneServer = new NetShellAloneServer(alPort, isNeedAuth, anyTimerTask);
             netShellAloneServer.run();
         } else if ("alone.client".equals(mode)) {
             String alHost = argsUtil.get("-alHost", "localhost");
             int alPort = argsUtil.get("-alPort", 8088);
 
+            boolean isNeedAuth = argsUtil.get("-needAuth", false);
             String username = argsUtil.get("-username", "xxx");
             String password = argsUtil.get("-password", "xxx");
             String networkCodeStr = argsUtil.get("-network.code", "0.0.0.0");
@@ -142,8 +148,7 @@ public class NetShellStarter {
             logger.info("networkCode=" + networkCodeStr + "," + networkCode);
             logger.info("subMaskCode=" + subMaskCodeStr + "," + subMaskCode);
 
-
-            NetShellAloneClient netShellAloneClient = new NetShellAloneClient(alHost, alPort, username, password, networkCode, subMaskCode);
+            NetShellAloneClient netShellAloneClient = new NetShellAloneClient(alHost, alPort, isNeedAuth, username, password, networkCode, subMaskCode);
             netShellAloneClient.run();
         } else if ("proxy.transfer".equals(mode)) {
             int tsfPort = argsUtil.get("-tsfPort", 9099);
@@ -174,24 +179,43 @@ public class NetShellStarter {
         }
     }
 
-
-    private static PasswordAuth getPasswordAuth(final String authFilePath) {
-        return new RefreshPasswordAuth(authFilePath);
-    }
-
-    private static class RefreshPasswordAuth extends Thread implements PasswordAuth {
+    private static class AnyTimerTask extends Thread implements PasswordAuth, ContextRouter.Matcher {
 
         private String authFilePath;
+        private String matchFilePath;
 
-        private RefreshPasswordAuth(final String authFilePath) {
+        private AnyTimerTask(String authFilePath, String matchFilePath) {
             this.authFilePath = authFilePath;
+            this.matchFilePath = matchFilePath;
             refresh();
             this.start();
         }
 
-        private Map<String, String> passwordMap;
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                }
+                refresh();
+            }
+        }
+
 
         private void refresh() {
+            refreshAuth();
+            refreshMatch();
+        }
+
+        private Map<String, String> passwordMap = new HashMap<String, String>();
+
+        @Override
+        public String findPassword(String user) throws Exception {
+            return passwordMap.get(user);
+        }
+
+        private void refreshAuth() {
             Map<String, String> pwMap = new HashMap<String, String>();
             BufferedReader br = null;
             try {
@@ -215,19 +239,49 @@ public class NetShellStarter {
         }
 
         @Override
-        public void run() {
-            while (true) {
-                try {
-                    Thread.sleep(60000);
-                } catch (InterruptedException e) {
+        public String match(String address) {
+            List<MatchEntity> meList = matchEntityList;
+            for (MatchEntity me : meList) {
+                if (me.pattern.matcher(address).matches()) {
+                    return me.address;
                 }
-                refresh();
+            }
+            return null;
+        }
+
+        List<MatchEntity> matchEntityList = new ArrayList<MatchEntity>();
+
+        private class MatchEntity {
+            private Pattern pattern;
+            private String address;
+
+            public MatchEntity(String address, Pattern pattern) {
+                this.pattern = pattern;
+                this.address = address;
             }
         }
 
-        @Override
-        public String findPassword(String user) throws Exception {
-            return passwordMap.get(user);
+        private void refreshMatch() {
+            List<MatchEntity> meList = new ArrayList<MatchEntity>();
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(matchFilePath)));
+                String line;
+                while (null != (line = br.readLine())) {
+                    String[] lineSplit = line.split(" ", -1);
+                    meList.add(new MatchEntity(lineSplit[0], Pattern.compile(lineSplit[1])));
+                }
+                matchEntityList = meList;
+            } catch (Exception e) {
+                logger.error("Unread any match info." + matchFilePath, e);
+            } finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    } catch (IOException e) {
+                    }
+                }
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import com.whipfeng.net.shell.ContextRouter;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.server.proxy.NetShellProxyServerDecoder;
 import com.whipfeng.net.shell.server.proxy.NetShellProxyServerQueue;
+import com.whipfeng.net.shell.server.proxy.Socks5InitialRequestHandler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -29,6 +30,7 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
     @Override
     protected void messageReceived(final ChannelHandlerContext alCtx, final DefaultSocks5CommandRequest commandRequest) throws Exception {
         logger.info("Dest Server:" + commandRequest);
+
         if (commandRequest.decoderResult().isSuccess()) {
             Socks5CommandType cmdType = commandRequest.type();
             if (Socks5CommandType.BIND.equals(cmdType)) {
@@ -40,6 +42,13 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
                 return;
             }
 
+            Socks5InitialRequestHandler initialRequest = alCtx.pipeline().get(Socks5InitialRequestHandler.class);
+            if (!initialRequest.hasPassAuth()) {
+                logger.warn("Un have pass auth:" + commandRequest);
+                alCtx.close();
+                return;
+            }
+
             if (Socks5CommandType.CONNECT.equals(cmdType)) {
                 ContextRouter outRouter = new ContextRouter(alCtx, commandRequest);
                 ContextRouter nsRouter = bondQueue.matchNetShell(outRouter);
@@ -48,11 +57,8 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
                 }
                 ChannelHandlerContext nsCtx = nsRouter.getCtx();
                 logger.info("Match Net(A):" + nsCtx);
-                Channel nsChannel = nsCtx.channel();
-                alCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
-                nsCtx.pipeline().addLast(new MsgExchangeHandler(alCtx.channel()));
                 nsCtx.pipeline().get(NetShellProxyServerDecoder.class).sendReqMsg(nsRouter, outRouter);
-                if (!nsChannel.isActive()) {
+                if (!nsCtx.channel().isActive()) {
                     alCtx.close();
                 }
                 return;

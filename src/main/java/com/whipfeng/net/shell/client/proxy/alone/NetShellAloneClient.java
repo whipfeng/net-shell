@@ -30,6 +30,7 @@ public class NetShellAloneClient {
 
     private String alHost;
     private int alPort;
+    private volatile boolean isNeedAuth;
     private String username;
     private String password;
 
@@ -42,9 +43,10 @@ public class NetShellAloneClient {
 
     private BlockingQueue<NetShellProxyClientDecoder> blockingQueue = new ArrayBlockingQueue(1);
 
-    public NetShellAloneClient(String alHost, int alPort, String username, String password, int networkCode, int subMaskCode) {
+    public NetShellAloneClient(String alHost, int alPort, boolean isNeedAuth, String username, String password, int networkCode, int subMaskCode) {
         this.alHost = alHost;
         this.alPort = alPort;
+        this.isNeedAuth = isNeedAuth;
         this.username = username;
         this.password = password;
         this.networkCode = networkCode;
@@ -65,11 +67,15 @@ public class NetShellAloneClient {
                                 ch.pipeline()
                                         .addLast(Socks5ClientEncoder.DEFAULT)
                                         .addLast(new Socks5InitialResponseDecoder())
-                                        .addLast(new Socks5InitialResponseHandler(username, password))
-                                        .addLast(new Socks5PasswordAuthResponseDecoder())
-                                        .addLast(new Socks5PasswordAuthResponseHandler())
-                                        .addLast(new Socks5CommandResponseDecoder())
-                                        .addLast(new NetShellAloneHandler())
+                                        .addLast(new Socks5InitialResponseHandler(username, password));
+
+                                if (isNeedAuth) {
+                                    ch.pipeline().addLast(new Socks5PasswordAuthResponseDecoder())
+                                            .addLast(new Socks5PasswordAuthResponseHandler());
+                                }
+
+                                ch.pipeline().addLast(new Socks5CommandResponseDecoder())
+                                        .addLast(new NetShellAloneHandler(isNeedAuth))
                                         .addLast("N-S-C-C", netShellClientDecoder)
                                         .addLast(new CustomHeartbeatEncoder());
                             }

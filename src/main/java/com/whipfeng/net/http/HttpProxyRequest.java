@@ -1,12 +1,52 @@
 package com.whipfeng.net.http;
 
+import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.socksx.SocksVersion;
+import io.netty.handler.codec.socksx.v5.Socks5AddressType;
+import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
+import io.netty.handler.codec.socksx.v5.Socks5CommandType;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by cmll on 2019/1/4.
  */
-public class HttpProxyRequest {
+public class HttpProxyRequest implements Socks5CommandRequest {
+
+    @Override
+    public Socks5CommandType type() {
+        return Socks5CommandType.CONNECT;
+    }
+
+    @Override
+    public Socks5AddressType dstAddrType() {
+        return Socks5AddressType.DOMAIN;
+    }
+
+    @Override
+    public String dstAddr() {
+        return this.host;
+    }
+
+    @Override
+    public int dstPort() {
+        return this.port;
+    }
+
+    @Override
+    public SocksVersion version() {
+        return SocksVersion.SOCKS5;
+    }
+
+    @Override
+    public DecoderResult decoderResult() {
+        return DecoderResult.SUCCESS;
+    }
+
+    @Override
+    public void setDecoderResult(DecoderResult result) {
+    }
 
     public interface Auth {
 

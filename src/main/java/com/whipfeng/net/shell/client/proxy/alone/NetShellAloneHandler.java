@@ -14,6 +14,12 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
 
     private static final Logger logger = LoggerFactory.getLogger(NetShellAloneHandler.class);
 
+    private volatile boolean isNeedAuth;
+
+    public NetShellAloneHandler(boolean isNeedAuth) {
+        this.isNeedAuth = isNeedAuth;
+    }
+
     @Override
     protected void messageReceived(final ChannelHandlerContext alCtx, final DefaultSocks5CommandResponse cmdMsg) throws Exception {
         logger.info("Dest Server:" + cmdMsg);
@@ -28,7 +34,7 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
 
     @Override
     public void channelActive(ChannelHandlerContext alCtx) {
-        Socks5InitialRequest initMsg = new DefaultSocks5InitialRequest(Socks5AuthMethod.PASSWORD);
+        Socks5InitialRequest initMsg = new DefaultSocks5InitialRequest(isNeedAuth ? Socks5AuthMethod.PASSWORD : Socks5AuthMethod.NO_AUTH);
         alCtx.writeAndFlush(initMsg);
     }
 }

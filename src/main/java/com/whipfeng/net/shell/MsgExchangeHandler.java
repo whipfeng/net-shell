@@ -16,13 +16,27 @@ public class MsgExchangeHandler extends ChannelHandlerAdapter {
 
     private Channel channel;
 
+    private Object attach;
+
     public MsgExchangeHandler(Channel channel) {
         this.channel = channel;
+    }
+
+    public MsgExchangeHandler(Channel channel, Object attach) {
+        this.channel = channel;
+        this.attach = attach;
     }
 
     public Channel getChannel() {
         return this.channel;
     }
+
+    public Object takeAttach() {
+        Object attach = this.attach;
+        this.attach = null;
+        return attach;
+    }
+
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {

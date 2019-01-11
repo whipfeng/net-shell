@@ -1,5 +1,7 @@
 package com.whipfeng.net.shell.server.proxy.alone;
 
+import com.whipfeng.net.http.HttpProxyDecoder;
+import com.whipfeng.net.http.HttpProxyEncoder;
 import com.whipfeng.net.shell.server.proxy.*;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -45,6 +47,9 @@ public class NetShellAloneServer {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
+                                    .addLast(new HttpProxyEncoder())
+                                    .addLast(new HttpProxyDecoder(passwordAuth))
+                                    .addLast(new NetShellHttpHandler(bondQueue))
                                     .addLast(Socks5ServerEncoder.DEFAULT)
                                     .addLast(new Socks5InitialRequestDecoder())
                                     .addLast(new Socks5InitialRequestHandler(isNeedAuth));

@@ -23,7 +23,9 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
     @Override
     protected void messageReceived(final ChannelHandlerContext outCtx, final DefaultSocks5CommandRequest commandRequest) throws Exception {
         logger.info("Dest Server:" + commandRequest);
-        if (commandRequest.decoderResult().isSuccess() && Socks5CommandType.CONNECT.equals(commandRequest.type())) {
+
+        if (commandRequest.decoderResult().isSuccess() && Socks5CommandType.CONNECT.equals(commandRequest.type())
+                && outCtx.pipeline().get(Socks5InitialRequestHandler.class).hasPassAuth()) {
             ContextRouter outRouter = new ContextRouter(outCtx, commandRequest);
             ContextRouter nsRouter = bondQueue.matchNetShell(outRouter);
             if (null == nsRouter) {
@@ -31,11 +33,8 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
             }
             ChannelHandlerContext nsCtx = nsRouter.getCtx();
             logger.info("Match Net:" + nsCtx);
-            Channel nsChannel = nsCtx.channel();
-            outCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
-            nsCtx.pipeline().addLast(new MsgExchangeHandler(outCtx.channel()));
             nsCtx.pipeline().get(NetShellProxyServerDecoder.class).sendReqMsg(nsRouter, outRouter);
-            if (!nsChannel.isActive()) {
+            if (!nsCtx.channel().isActive()) {
                 outCtx.close();
             }
             return;

@@ -2,6 +2,8 @@ package com.whipfeng.net.shell.server.proxy;
 
 import com.whipfeng.net.heart.CustomHeartbeatConst;
 import com.whipfeng.net.heart.CustomHeartbeatDecoder;
+import com.whipfeng.net.http.HttpProxyRequest;
+import com.whipfeng.net.http.HttpProxyResponse;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.ContextRouter;
 import com.whipfeng.net.shell.RC4TransferHandler;
@@ -12,7 +14,7 @@ import io.netty.handler.codec.socksx.v5.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
 /**
  * 网络外壳代理端编解码器
@@ -35,17 +37,34 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
     }
 
     @Override
-    protected void decode(final ChannelHandlerContext ctx, byte flag) throws Exception {
+    protected void decode(final ChannelHandlerContext nsCtx, byte flag) throws Exception {
         //响应连接
         if (CONN_ACK_MSG == flag) {
-            logger.debug("Received(P) 'CONN_ACK' from: " + ctx);
-            MsgExchangeHandler msgExchangeHandler = ctx.pipeline().get(MsgExchangeHandler.class);
+            logger.debug("Received(P) 'CONN_ACK' from: " + nsCtx);
+            MsgExchangeHandler msgExchangeHandler = nsCtx.pipeline().get(MsgExchangeHandler.class);
             Channel outChannel = msgExchangeHandler.getChannel();
-            Socks5CommandResponse commandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4);
-            outChannel.writeAndFlush(commandResponse);
+            Channel nsChannel = nsCtx.channel();
+            Object attach = msgExchangeHandler.takeAttach();
+            if (attach instanceof HttpProxyRequest) {
+                HttpProxyRequest request = (HttpProxyRequest)attach;
+                //响应连接
+                if ("CONNECT".equals(request.getMethod())) {
+                    outChannel.writeAndFlush(HttpProxyResponse.buildConnectEstablished(request.getVersion()));
+                }
+                if (request.getCache().length > 0) {
+                    ByteBuf buf = nsChannel.alloc().buffer(request.getCache().length);
+                    buf.writeBytes(request.getCache());
+                    nsChannel.writeAndFlush(buf);
+                }
+                outChannel.config().setAutoRead(true);
+                outChannel.read();
+            } else {
+                Socks5CommandResponse commandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4);
+                outChannel.writeAndFlush(commandResponse);
+            }
             return;
         }
-        super.decode(ctx, flag);
+        super.decode(nsCtx, flag);
     }
 
     @Override
@@ -72,13 +91,9 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
             ContextRouter nsRouter = new ContextRouter(nsCtx, networkCode, subMaskCode);
             ContextRouter outRouter = bondQueue.matchNetOut(nsRouter);
             if (null != outRouter) {
-                ChannelHandlerContext outCtx = outRouter.getCtx();
-                logger.info("Match Net(P):" + outCtx);
-                Channel outChannel = outCtx.channel();
-                outCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
-                nsCtx.pipeline().addLast(new MsgExchangeHandler(outCtx.channel()));
+                logger.info("Match Net(P):" +  outRouter.getCtx());
                 sendReqMsg(nsRouter, outRouter);
-                if (!outChannel.isActive()) {
+                if (!outRouter.getCtx().channel().isActive()) {
                     nsCtx.close();
                 }
             }
@@ -87,11 +102,17 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
         super.decode(nsCtx, flag);
     }
 
-    public ChannelFuture sendReqMsg(ContextRouter nsRouter, ContextRouter outRouter) throws UnsupportedEncodingException {
-        String inHost = outRouter.getCommandRequest().dstAddr();
-        int inPort = outRouter.getCommandRequest().dstPort();
-        byte[] buf = inHost.getBytes("UTF-8");
-        ByteBuf out = nsRouter.getCtx().alloc().buffer(CustomHeartbeatConst.HEAD_LEN + 2 + buf.length);
+    public ChannelFuture sendReqMsg(ContextRouter nsRouter, ContextRouter outRouter) {
+        ChannelHandlerContext outCtx = outRouter.getCtx();
+        ChannelHandlerContext nsCtx = nsRouter.getCtx();
+        Socks5CommandRequest commandRequest = outRouter.getCommandRequest();
+        outCtx.pipeline().addLast(new MsgExchangeHandler(nsCtx.channel()));
+        nsCtx.pipeline().addLast(new MsgExchangeHandler(outCtx.channel(), commandRequest));
+
+        String inHost = commandRequest.dstAddr();
+        int inPort = commandRequest.dstPort();
+        byte[] buf = inHost.getBytes(Charset.forName("UTF-8"));
+        ByteBuf out = nsCtx.alloc().buffer(CustomHeartbeatConst.HEAD_LEN + 2 + buf.length);
         out.writeInt(2 + buf.length);
         out.writeByte(CONN_REQ_MSG);
         out.writeByte((inPort >>> 8) & 255);

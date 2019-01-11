@@ -91,7 +91,7 @@ public class NetShellTest {
         String alHost = "localhost";
         int alPort = 8088;
 
-        NetShellAloneClient netShellAloneClient = new NetShellAloneClient(alHost, alPort, "migu_log", "migu_log123!", 0, 0);
+        NetShellAloneClient netShellAloneClient = new NetShellAloneClient(alHost, alPort, true, "migu_log", "migu_log123!", 0, 0);
         netShellAloneClient.run();
     }
 

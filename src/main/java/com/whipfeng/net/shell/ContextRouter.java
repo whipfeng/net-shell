@@ -11,6 +11,23 @@ import java.util.StringTokenizer;
  */
 public class ContextRouter {
 
+    public interface Matcher {
+        String match(String address);
+    }
+
+    private static Matcher MATCHER = new Matcher() {
+        @Override
+        public String match(String address) {
+            return address;
+        }
+    };
+
+    public static void setMatcher(Matcher matcher) {
+        if (null != matcher) {
+            MATCHER = matcher;
+        }
+    }
+
     private int networkCode;
     private int subMaskCode;
 
@@ -35,7 +52,11 @@ public class ContextRouter {
     }
 
     public static int transferAddress(String address) {
-        StringTokenizer tokenizer = new StringTokenizer(address, ".");
+        String matchAddress = MATCHER.match(address);
+        if (null == matchAddress) {
+            matchAddress = address;
+        }
+        StringTokenizer tokenizer = new StringTokenizer(matchAddress, ".");
         int intAddress = 0;
         while (tokenizer.hasMoreTokens()) {
             intAddress = (intAddress << 8) | Integer.parseInt(tokenizer.nextToken());
