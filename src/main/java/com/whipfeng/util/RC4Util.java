@@ -24,12 +24,16 @@ public class RC4Util {
         return state;
     }
 
-    public static void transfer(ByteBuf buf, byte[] key) {
+    public static void transfer(byte[] key, ByteBuf buf) {
+        transfer(key, buf, buf.readerIndex(), buf.writerIndex());
+    }
+
+    public static void transfer(byte[] key, ByteBuf buf, int beginIdx, int endIdx) {
         int x = 0;
         int y = 0;
         int xorIdx;
         byte[] k = initKey(key);
-        for (int i = buf.readerIndex(); i < buf.writerIndex(); i++) {
+        for (int i = beginIdx; i < endIdx; i++) {
             x = (x + 1) & 0xff;
             y = ((k[x] & 0xff) + y) & 0xff;
             byte tmp = k[x];
@@ -37,6 +41,26 @@ public class RC4Util {
             k[y] = tmp;
             xorIdx = ((k[x] & 0xff) + (k[y] & 0xff)) & 0xff;
             buf.setByte(i, buf.getByte(i) ^ k[xorIdx]);
+        }
+    }
+
+    public static void transfer(byte[] key, byte[] buf) {
+        transfer(key, buf, 0, buf.length);
+    }
+
+    public static void transfer(byte[] key, byte[] buf, int beginIdx, int endIdx) {
+        int x = 0;
+        int y = 0;
+        int xorIdx;
+        byte[] k = initKey(key);
+        for (int i = beginIdx; i < endIdx; i++) {
+            x = (x + 1) & 0xff;
+            y = ((k[x] & 0xff) + y) & 0xff;
+            byte tmp = k[x];
+            k[x] = k[y];
+            k[y] = tmp;
+            xorIdx = ((k[x] & 0xff) + (k[y] & 0xff)) & 0xff;
+            buf[i] = (byte) (buf[i] ^ k[xorIdx]);
         }
     }
 }

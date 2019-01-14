@@ -4,6 +4,7 @@ import com.whipfeng.net.heart.CustomHeartbeatConst;
 import com.whipfeng.net.heart.CustomHeartbeatDecoder;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.RC4TransferHandler;
+import com.whipfeng.util.RC4Util;
 import com.whipfeng.util.RSAUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -29,13 +30,15 @@ public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
     private static final byte CONN_ACK_MSG = 6;
     private static final byte PW_EX_REQ_MSG = 7;
     private static final byte PW_EX_ACK_MSG = 8;
+    private static final byte PW_EX_REQ_MSG_V2 = 9;
 
     private BlockingQueue<NetShellProxyClientDecoder> blockingQueue;
 
     private int networkCode;
     private int subMaskCode;
 
-    private RC4TransferHandler rc4Codec;
+    private byte[] secretKey;
+    private boolean isV2 = false;
 
     public NetShellProxyClientDecoder(BlockingQueue<NetShellProxyClientDecoder> blockingQueue, int networkCode, int subMaskCode) {
         this.blockingQueue = blockingQueue;
@@ -47,7 +50,7 @@ public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
     protected void decode(final ChannelHandlerContext ctx, byte flag) throws Exception {
         //交换密码应答
         if (PW_EX_ACK_MSG == flag) {
-            ctx.pipeline().addLast(rc4Codec);
+            ctx.pipeline().addLast(new RC4TransferHandler(secretKey));
             return;
         }
         super.decode(ctx, flag);
@@ -59,8 +62,17 @@ public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
         if (CONN_REQ_MSG == flag && len > 2) {
             logger.debug("Received 'CONN_REQ' from: " + nsCtx);
 
+            byte[] buf = new byte[len];
+            in.readBytes(buf);
+            if (isV2) {
+                RC4Util.transfer(this.secretKey, buf);
+            }
+            //获取主机名和端口
+            final int inPort = ((255 & buf[0]) << 8) | (255 & buf[1]);
+            final String inHost = new String(buf, 2, len - 2, "UTF-8");
+
             boolean result = blockingQueue.remove(this);
-            logger.info(result + " Finish Connect(P):" + nsCtx);
+            logger.info(result + " Connect Request(P):" + inHost + ":" + inPort + nsCtx);
 
             Bootstrap inBootstrap = new Bootstrap();
             inBootstrap.group(nsCtx.channel().eventLoop().parent())
@@ -73,12 +85,6 @@ public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
                                     .addLast(new MsgExchangeHandler(nsCtx.channel()));
                         }
                     });
-            //获取主机名和端口
-            final int inPort = ((255 & in.readByte()) << 8) | (255 & in.readByte());
-            byte[] buf = new byte[len - 2];
-            in.readBytes(buf);
-            final String inHost = new String(buf, "UTF-8");
-            logger.info("Connect Request(P):" + inHost + ":" + inPort);
 
             ChannelFuture inFuture = inBootstrap.remoteAddress(inHost, inPort).connect();
 
@@ -124,13 +130,13 @@ public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
         }
         SecureRandom random = new SecureRandom();
         int numBytes = 128 + random.nextInt(128);
-        byte[] key = random.generateSeed(numBytes);
-        rc4Codec = new RC4TransferHandler(key);
-        key = RSAUtil.publicEncrypt(key);
+        secretKey = random.generateSeed(numBytes);
+        byte[] key = RSAUtil.publicEncrypt(secretKey);
         //随机生成并写出密码
         ByteBuf out = ctx.alloc().buffer(CustomHeartbeatConst.HEAD_LEN + key.length);
         out.writeInt(key.length);
-        out.writeByte(PW_EX_REQ_MSG);
+        isV2 = true;
+        out.writeByte(PW_EX_REQ_MSG_V2);
         out.writeBytes(key);
         ctx.writeAndFlush(out);
     }

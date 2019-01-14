@@ -7,6 +7,7 @@ import com.whipfeng.net.http.HttpProxyResponse;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.ContextRouter;
 import com.whipfeng.net.shell.RC4TransferHandler;
+import com.whipfeng.util.RC4Util;
 import com.whipfeng.util.RSAUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -29,6 +30,7 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
     private static final byte CONN_ACK_MSG = 6;
     private static final byte PW_EX_REQ_MSG = 7;
     private static final byte PW_EX_ACK_MSG = 8;
+    private static final byte PW_EX_REQ_MSG_V2 = 9;
 
     private NetShellProxyServerQueue bondQueue;
 
@@ -46,7 +48,7 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
             Channel nsChannel = nsCtx.channel();
             Object attach = msgExchangeHandler.takeAttach();
             if (attach instanceof HttpProxyRequest) {
-                HttpProxyRequest request = (HttpProxyRequest)attach;
+                HttpProxyRequest request = (HttpProxyRequest) attach;
                 //响应连接
                 if ("CONNECT".equals(request.getMethod())) {
                     outChannel.writeAndFlush(HttpProxyResponse.buildConnectEstablished(request.getVersion()));
@@ -67,8 +69,15 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
         super.decode(nsCtx, flag);
     }
 
+    private byte[] secretKey;
+    private boolean isV2 = false;
+
     @Override
     protected void decode(final ChannelHandlerContext nsCtx, byte flag, ByteBuf in, int len) throws Exception {
+        if (PW_EX_REQ_MSG_V2 == flag) {
+            isV2 = true;
+            flag = PW_EX_REQ_MSG;
+        }
         //交換密碼請求
         if (PW_EX_REQ_MSG == flag) {
             if (RSAUtil.noPrivateKey()) {
@@ -76,8 +85,8 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
             }
             byte[] key = new byte[len];
             in.readBytes(key);
-            key = RSAUtil.privateDecrypt(key);
-            RC4TransferHandler rc4Codec = new RC4TransferHandler(key);
+            secretKey = RSAUtil.privateDecrypt(key);
+            RC4TransferHandler rc4Codec = new RC4TransferHandler(secretKey);
             nsCtx.pipeline().addLast(rc4Codec);
             sendFlagMsg(nsCtx, PW_EX_ACK_MSG);
             return;
@@ -91,7 +100,7 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
             ContextRouter nsRouter = new ContextRouter(nsCtx, networkCode, subMaskCode);
             ContextRouter outRouter = bondQueue.matchNetOut(nsRouter);
             if (null != outRouter) {
-                logger.info("Match Net(P):" +  outRouter.getCtx());
+                logger.info("Match Net(P):" + outRouter.getCtx());
                 sendReqMsg(nsRouter, outRouter);
                 if (!outRouter.getCtx().channel().isActive()) {
                     nsCtx.close();
@@ -118,6 +127,10 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
         out.writeByte((inPort >>> 8) & 255);
         out.writeByte(inPort & 255);
         out.writeBytes(buf);
+        if (isV2) {
+            int startIdx = out.readerIndex() + CustomHeartbeatConst.HEAD_LEN;
+            RC4Util.transfer(this.secretKey, out, startIdx, startIdx + 2 + buf.length);
+        }
         return nsRouter.getCtx().writeAndFlush(out);
     }
 }

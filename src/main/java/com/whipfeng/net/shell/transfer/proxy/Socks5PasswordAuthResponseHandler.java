@@ -26,7 +26,7 @@ public class Socks5PasswordAuthResponseHandler extends SimpleChannelInboundHandl
         logger.info("Login user info: " + authMsg);
 
         if (authMsg.decoderResult().isSuccess() && Socks5PasswordAuthStatus.SUCCESS.equals(authMsg.status())) {
-            Socks5CommandRequest cmdMsg = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.IPv4, dstHost, dstPort);
+            Socks5CommandRequest cmdMsg = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, dstHost, dstPort);
             ctx.writeAndFlush(cmdMsg);
             return;
         }

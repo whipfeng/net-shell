@@ -11,6 +11,10 @@ import com.whipfeng.net.shell.server.NetShellServer;
 import com.whipfeng.net.shell.transfer.proxy.NetShellProxyTransfer;
 import com.whipfeng.util.ArgsUtil;
 import com.whipfeng.util.RSAUtil;
+import org.apache.commons.io.filefilter.FileFileFilter;
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
+import org.apache.commons.io.monitor.FileAlterationMonitor;
+import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,27 +183,55 @@ public class NetShellStarter {
         }
     }
 
-    private static class AnyTimerTask extends Thread implements PasswordAuth, ContextRouter.Matcher {
+    private static class AnyTimerTask extends FileAlterationListenerAdaptor implements PasswordAuth, ContextRouter.Matcher {
 
-        private String authFilePath;
-        private String matchFilePath;
+        private File authFile;
+        private File matchFile;
 
-        private AnyTimerTask(String authFilePath, String matchFilePath) {
-            this.authFilePath = authFilePath;
-            this.matchFilePath = matchFilePath;
+        private AnyTimerTask(final String authFilePath, String matchFilePath) throws Exception {
+            this.authFile = new File(authFilePath);
+            this.matchFile = new File(matchFilePath);
             refresh();
-            this.start();
+            // 每隔1000毫秒扫描一次
+            FileAlterationMonitor monitor = new FileAlterationMonitor(1000L);
+            FileAlterationObserver authObserver = new FileAlterationObserver(this.authFile.getParentFile(), new FileFileFilter() {
+                public boolean accept(File file) {
+                    return file.isFile() && file.equals(authFile);
+                }
+            });
+            authObserver.addListener(this);
+            monitor.addObserver(authObserver);
+            FileAlterationObserver matchObserver = new FileAlterationObserver(this.matchFile.getParentFile(), new FileFileFilter() {
+                public boolean accept(File file) {
+                    return file.isFile() && file.equals(matchFile);
+                }
+            });
+            matchObserver.addListener(this);
+            monitor.addObserver(matchObserver);
+            monitor.start();
         }
 
         @Override
-        public void run() {
-            while (true) {
-                try {
-                    Thread.sleep(60000);
-                } catch (InterruptedException e) {
-                }
-                refresh();
+        public void onFileCreate(File file) {
+            this.onFileChange(file);
+            super.onFileCreate(file);
+        }
+
+        @Override
+        public void onFileChange(File file) {
+            if (file.equals(this.authFile)) {
+                refreshAuth();
             }
+            if (file.equals(this.matchFile)) {
+                refreshMatch();
+            }
+            super.onFileChange(file);
+        }
+
+        @Override
+        public void onFileDelete(File file) {
+            this.onFileChange(file);
+            super.onFileDelete(file);
         }
 
 
@@ -216,10 +248,11 @@ public class NetShellStarter {
         }
 
         private void refreshAuth() {
+            logger.info("----------------Begin refresh auth----------------");
             Map<String, String> pwMap = new HashMap<String, String>();
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new InputStreamReader(new FileInputStream(authFilePath)));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(authFile)));
                 String line;
                 while (null != (line = br.readLine())) {
                     String[] lineSplit = line.split("/", -1);
@@ -227,7 +260,7 @@ public class NetShellStarter {
                 }
                 passwordMap = pwMap;
             } catch (Exception e) {
-                logger.error("Unread any user info." + authFilePath, e);
+                logger.error("Unread any user info." + authFile, e);
             } finally {
                 if (br != null) {
                     try {
@@ -236,6 +269,7 @@ public class NetShellStarter {
                     }
                 }
             }
+            logger.info("-----------------End refresh auth-----------------");
         }
 
         @Override
@@ -262,10 +296,11 @@ public class NetShellStarter {
         }
 
         private void refreshMatch() {
+            logger.info("----------------Begin refresh match----------------");
             List<MatchEntity> meList = new ArrayList<MatchEntity>();
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new InputStreamReader(new FileInputStream(matchFilePath)));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(matchFile)));
                 String line;
                 while (null != (line = br.readLine())) {
                     String[] lineSplit = line.split(" ", -1);
@@ -273,7 +308,7 @@ public class NetShellStarter {
                 }
                 matchEntityList = meList;
             } catch (Exception e) {
-                logger.error("Unread any match info." + matchFilePath, e);
+                logger.error("Unread any match info." + matchFile, e);
             } finally {
                 if (br != null) {
                     try {
@@ -282,6 +317,7 @@ public class NetShellStarter {
                     }
                 }
             }
+            logger.info("----------------End refresh match----------------");
         }
     }
 }

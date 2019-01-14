@@ -25,14 +25,14 @@ public class RC4TransferHandler extends ChannelHandlerAdapter {
 
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
-            RC4Util.transfer((ByteBuf) msg, this.secretKey);
+            RC4Util.transfer(this.secretKey, (ByteBuf) msg);
         }
         ctx.fireChannelRead(msg);
     }
 
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof ByteBuf) {
-            RC4Util.transfer((ByteBuf) msg, this.secretKey);
+            RC4Util.transfer(this.secretKey, (ByteBuf) msg);
         }
         ctx.write(msg, promise);
     }

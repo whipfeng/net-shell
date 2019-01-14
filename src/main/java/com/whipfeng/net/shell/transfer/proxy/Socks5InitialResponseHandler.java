@@ -26,7 +26,7 @@ public class Socks5InitialResponseHandler extends SimpleChannelInboundHandler<De
                 Socks5PasswordAuthRequest authMsg = new DefaultSocks5PasswordAuthRequest(username, password);
                 ctx.writeAndFlush(authMsg);
             } else {
-                Socks5CommandRequest cmdMsg = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.IPv4, dstHost, dstPort);
+                Socks5CommandRequest cmdMsg = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, dstHost, dstPort);
                 ctx.writeAndFlush(cmdMsg);
             }
             return;

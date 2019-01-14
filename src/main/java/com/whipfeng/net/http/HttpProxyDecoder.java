@@ -184,27 +184,35 @@ public class HttpProxyDecoder extends ReplayingDecoder<HttpProxyDecoder.State> {
                 if (null == auth || !(auth instanceof HttpProxyRequest.DigestAuth)) {
                     passAuth = false;
                     stale = false;
-                } else {
+                }
+                if (passAuth) {
                     HttpProxyRequest.DigestAuth digestAuth = (HttpProxyRequest.DigestAuth) auth;
-                    long oldNonce = Long.parseLong(digestAuth.getNonce());
-                    long nonce = System.currentTimeMillis();
-                    //一秒换一次
-                    if (nonce - oldNonce > 1000) {
+                    try {
+                        long oldNonce = Long.parseLong(digestAuth.getNonce());
+                        long nonce = System.currentTimeMillis();
+                        //一秒换一次
+                        if (nonce - oldNonce > 1000) {
+                            passAuth = false;
+                            stale = true;
+                        }
+                    } catch (NumberFormatException nfe) {
                         passAuth = false;
-                        stale = true;
+                        stale = false;
+                    }
+                }
+                if (passAuth) {
+                    HttpProxyRequest.DigestAuth digestAuth = (HttpProxyRequest.DigestAuth) auth;
+                    String password = passwordAuth.findPassword(digestAuth.getUserName());
+                    if (password == null) {
+                        passAuth = false;
+                        stale = false;
                     } else {
-                        String password = passwordAuth.findPassword(digestAuth.getUserName());
-                        if (password == null) {
+                        String A1 = DigestUtils.md5Hex(digestAuth.getUserName() + ':' + digestAuth.getRealm() + ':' + password);
+                        String A2 = DigestUtils.md5Hex(request.getMethod() + ':' + digestAuth.getUri());
+                        String response = DigestUtils.md5Hex(A1 + ':' + digestAuth.getNonce() + ':' + A2);
+                        if (!response.equals(digestAuth.getResponse())) {
                             passAuth = false;
                             stale = false;
-                        } else {
-                            String A1 = DigestUtils.md5Hex(digestAuth.getUserName() + ':' + digestAuth.getRealm() + ':' + password);
-                            String A2 = DigestUtils.md5Hex(request.getMethod() + ':' + digestAuth.getUri());
-                            String response = DigestUtils.md5Hex(A1 + ':' + digestAuth.getNonce() + ':' + A2);
-                            if (!response.equals(digestAuth.getResponse())) {
-                                passAuth = false;
-                                stale = false;
-                            }
                         }
                     }
                 }
