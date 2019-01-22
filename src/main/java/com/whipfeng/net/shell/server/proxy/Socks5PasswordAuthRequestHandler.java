@@ -24,7 +24,7 @@ public class Socks5PasswordAuthRequestHandler extends SimpleChannelInboundHandle
     }
 
     @Override
-    protected void messageReceived(final ChannelHandlerContext ctx, final DefaultSocks5PasswordAuthRequest msg) throws Exception {
+    protected void channelRead0(final ChannelHandlerContext ctx, final DefaultSocks5PasswordAuthRequest msg) throws Exception {
         logger.info("Login user info: " + msg);
 
         if (msg.decoderResult().isSuccess()) {

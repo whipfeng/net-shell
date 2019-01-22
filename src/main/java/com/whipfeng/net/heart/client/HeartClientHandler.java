@@ -1,15 +1,15 @@
 package com.whipfeng.net.heart.client;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Created by fz on 2018/11/20.
  */
-public class HeartClientHandler extends ChannelHandlerAdapter {
+public class HeartClientHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(HeartClientHandler.class);
 

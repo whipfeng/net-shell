@@ -27,7 +27,7 @@ public class Socks5InitialRequestHandler extends SimpleChannelInboundHandler<Def
     }
 
     @Override
-    protected void messageReceived(ChannelHandlerContext ctx, DefaultSocks5InitialRequest msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, DefaultSocks5InitialRequest msg) throws Exception {
         logger.debug("Init SOCKS5:" + msg);
         if (msg.decoderResult().isSuccess() && SocksVersion.SOCKS5.equals(msg.version())) {
             if (isNeedAuth && msg.authMethods().contains(Socks5AuthMethod.PASSWORD)) {

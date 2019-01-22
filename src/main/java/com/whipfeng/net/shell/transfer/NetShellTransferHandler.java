@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  * 代理转发器组装
  * Created by fz on 2018/11/22.
  */
-public class NetShellTransferHandler extends ChannelHandlerAdapter {
+public class NetShellTransferHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(NetShellTransferHandler.class);
 

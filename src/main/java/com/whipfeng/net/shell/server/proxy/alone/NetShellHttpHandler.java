@@ -2,7 +2,6 @@ package com.whipfeng.net.shell.server.proxy.alone;
 
 import com.whipfeng.net.http.HttpProxyRequest;
 import com.whipfeng.net.shell.ContextRouter;
-import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.server.proxy.NetShellProxyServerDecoder;
 import com.whipfeng.net.shell.server.proxy.NetShellProxyServerQueue;
 import io.netty.channel.*;
@@ -22,7 +21,7 @@ public class NetShellHttpHandler extends SimpleChannelInboundHandler<HttpProxyRe
     }
 
     @Override
-    public void messageReceived(final ChannelHandlerContext alCtx, final HttpProxyRequest request) throws Exception {
+    public void channelRead0(final ChannelHandlerContext alCtx, final HttpProxyRequest request) throws Exception {
         logger.info("Connect OK:" + request + alCtx);
         ChannelPipeline pipeline = alCtx.pipeline();
         while (this != pipeline.last()) {

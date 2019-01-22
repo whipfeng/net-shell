@@ -3,7 +3,7 @@ package com.whipfeng.net.shell.client.proxy;
 import com.whipfeng.net.heart.CustomHeartbeatConst;
 import com.whipfeng.net.heart.CustomHeartbeatDecoder;
 import com.whipfeng.net.shell.MsgExchangeHandler;
-import com.whipfeng.net.shell.RC4TransferHandler;
+import com.whipfeng.net.shell.RC4Transfer;
 import com.whipfeng.util.RC4Util;
 import com.whipfeng.util.RSAUtil;
 import io.netty.bootstrap.Bootstrap;
@@ -50,7 +50,7 @@ public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
     protected void decode(final ChannelHandlerContext ctx, byte flag) throws Exception {
         //交换密码应答
         if (PW_EX_ACK_MSG == flag) {
-            ctx.pipeline().addLast(new RC4TransferHandler(secretKey));
+            ctx.pipeline().addLast(new RC4Transfer(secretKey).getIOHandlers());
             return;
         }
         super.decode(ctx, flag);

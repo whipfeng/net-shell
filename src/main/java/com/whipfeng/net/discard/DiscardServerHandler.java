@@ -1,13 +1,13 @@
 package com.whipfeng.net.discard;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
 
 //ChannelInboundHandlerAdapter实现自ChannelInboundHandler
 //ChannelInboundHandler提供了不同的事件处理方法你可以重写
-public class DiscardServerHandler extends ChannelHandlerAdapter {
+public class DiscardServerHandler extends ChannelInboundHandlerAdapter {
     /*
      * @作者:CJY
      * @说明:该方法用于接收从客户端接收的信息

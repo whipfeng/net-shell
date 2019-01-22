@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  * 代理转发器组装
  * Created by fz on 2018/11/22.
  */
-public class NetShellProxyTransferHandler extends ChannelHandlerAdapter {
+public class NetShellProxyTransferHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(NetShellProxyTransferHandler.class);
 

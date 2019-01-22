@@ -17,7 +17,7 @@ public class Socks5CommandResponseHandler extends SimpleChannelInboundHandler<De
     private static final Logger logger = LoggerFactory.getLogger(Socks5CommandResponseHandler.class);
 
     @Override
-    protected void messageReceived(final ChannelHandlerContext proxyCtx, final DefaultSocks5CommandResponse cmdMsg) throws Exception {
+    protected void channelRead0(final ChannelHandlerContext proxyCtx, final DefaultSocks5CommandResponse cmdMsg) throws Exception {
         logger.info("Dest Server:" + cmdMsg);
         if (cmdMsg.decoderResult().isSuccess() && Socks5CommandStatus.SUCCESS.equals(cmdMsg.status())) {
 

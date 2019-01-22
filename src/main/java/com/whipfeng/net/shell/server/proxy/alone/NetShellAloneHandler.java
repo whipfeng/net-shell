@@ -28,7 +28,7 @@ public class NetShellAloneHandler extends SimpleChannelInboundHandler<DefaultSoc
     }
 
     @Override
-    protected void messageReceived(final ChannelHandlerContext alCtx, final DefaultSocks5CommandRequest commandRequest) throws Exception {
+    protected void channelRead0(final ChannelHandlerContext alCtx, final DefaultSocks5CommandRequest commandRequest) throws Exception {
         logger.info("Dest Server:" + commandRequest);
 
         if (commandRequest.decoderResult().isSuccess()) {

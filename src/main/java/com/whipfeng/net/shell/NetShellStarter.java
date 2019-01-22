@@ -303,7 +303,7 @@ public class NetShellStarter {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(matchFile)));
                 String line;
                 while (null != (line = br.readLine())) {
-                    String[] lineSplit = line.split(" ", -1);
+                    String[] lineSplit = line.split("\\s", -1);
                     meList.add(new MatchEntity(lineSplit[0], Pattern.compile(lineSplit[1])));
                 }
                 matchEntityList = meList;

@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <netty.version>5.0.0.Alpha2</netty.version>
+        <netty.version>4.1.32.Final</netty.version>
         <commons-codec.version>1.11</commons-codec.version>
         <commons-io.version>2.6</commons-io.version>
         <log4j.version>1.2.17</log4j.version>

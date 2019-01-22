@@ -6,7 +6,7 @@ import com.whipfeng.net.http.HttpProxyRequest;
 import com.whipfeng.net.http.HttpProxyResponse;
 import com.whipfeng.net.shell.MsgExchangeHandler;
 import com.whipfeng.net.shell.ContextRouter;
-import com.whipfeng.net.shell.RC4TransferHandler;
+import com.whipfeng.net.shell.RC4Transfer;
 import com.whipfeng.util.RC4Util;
 import com.whipfeng.util.RSAUtil;
 import io.netty.buffer.ByteBuf;
@@ -86,8 +86,8 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
             byte[] key = new byte[len];
             in.readBytes(key);
             secretKey = RSAUtil.privateDecrypt(key);
-            RC4TransferHandler rc4Codec = new RC4TransferHandler(secretKey);
-            nsCtx.pipeline().addLast(rc4Codec);
+            RC4Transfer rc4Codec = new RC4Transfer(secretKey);
+            nsCtx.pipeline().addLast(rc4Codec.getIOHandlers());
             sendFlagMsg(nsCtx, PW_EX_ACK_MSG);
             return;
         }

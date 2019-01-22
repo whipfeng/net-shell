@@ -21,7 +21,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
     }
 
     @Override
-    protected void messageReceived(final ChannelHandlerContext outCtx, final DefaultSocks5CommandRequest commandRequest) throws Exception {
+    protected void channelRead0(final ChannelHandlerContext outCtx, final DefaultSocks5CommandRequest commandRequest) throws Exception {
         logger.info("Dest Server:" + commandRequest);
 
         if (commandRequest.decoderResult().isSuccess() && Socks5CommandType.CONNECT.equals(commandRequest.type())

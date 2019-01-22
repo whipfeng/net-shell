@@ -2,6 +2,7 @@ package com.whipfeng.net.shell;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
+import io.netty.util.internal.StringUtil;
 
 import java.util.StringTokenizer;
 
@@ -53,7 +54,7 @@ public class ContextRouter {
 
     public static int transferAddress(String address) {
         String matchAddress = MATCHER.match(address);
-        if (null == matchAddress) {
+        if (null == matchAddress || 0 == matchAddress.length()) {
             matchAddress = address;
         }
         StringTokenizer tokenizer = new StringTokenizer(matchAddress, ".");

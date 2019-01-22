@@ -22,7 +22,7 @@ public class Socks5InitialResponseHandler extends SimpleChannelInboundHandler<De
     }
 
     @Override
-    protected void messageReceived(ChannelHandlerContext ctx, DefaultSocks5InitialResponse initMsg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, DefaultSocks5InitialResponse initMsg) throws Exception {
         logger.info("Init SOCKS5:" + initMsg);
         if (initMsg.decoderResult().isSuccess()) {
             if (Socks5AuthMethod.PASSWORD.equals(initMsg.authMethod())) {

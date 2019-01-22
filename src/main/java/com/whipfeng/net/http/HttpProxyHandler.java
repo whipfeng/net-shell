@@ -16,7 +16,7 @@ public class HttpProxyHandler extends SimpleChannelInboundHandler<HttpProxyReque
     private static final Logger logger = LoggerFactory.getLogger(HttpProxyHandler.class);
 
     @Override
-    public void messageReceived(final ChannelHandlerContext hpCtx, final HttpProxyRequest request) throws Exception {
+    public void channelRead0(final ChannelHandlerContext hpCtx, final HttpProxyRequest request) throws Exception {
         logger.info("Connect OK:" + request + hpCtx);
         Bootstrap dstBootstrap = new Bootstrap();
         dstBootstrap.group(hpCtx.channel().eventLoop().parent())
