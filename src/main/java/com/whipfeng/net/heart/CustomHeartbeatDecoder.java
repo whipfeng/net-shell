@@ -92,7 +92,7 @@ public class CustomHeartbeatDecoder extends ReplayingDecoder {
         ByteBuf out = ctx.alloc().buffer(CustomHeartbeatConst.HEAD_LEN);
         out.writeInt(0);
         out.writeByte(flag);
-        return ctx.writeAndFlush(out);
+        return ctx.pipeline().context(this).writeAndFlush(out);
     }
 
     protected void handleAllIdle(ChannelHandlerContext ctx) {

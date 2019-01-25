@@ -3,6 +3,7 @@ package com.whipfeng.net.shell.server.proxy.alone;
 import com.whipfeng.net.http.HttpProxyDecoder;
 import com.whipfeng.net.http.HttpProxyEncoder;
 import com.whipfeng.net.shell.server.proxy.*;
+import com.whipfeng.util.Socks5AddressUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -50,14 +51,14 @@ public class NetShellAloneServer {
                                     .addLast(new HttpProxyEncoder())
                                     .addLast(new HttpProxyDecoder(passwordAuth))
                                     .addLast(new NetShellHttpHandler(bondQueue))
-                                    .addLast(Socks5ServerEncoder.DEFAULT)
+                                    .addLast(new Socks5ServerEncoder(Socks5AddressUtil.DEFAULT_ENCODER))
                                     .addLast(new Socks5InitialRequestDecoder())
                                     .addLast(new Socks5InitialRequestHandler(isNeedAuth));
                             if (isNeedAuth) {
                                 ch.pipeline().addLast(new Socks5PasswordAuthRequestDecoder())
                                         .addLast(new Socks5PasswordAuthRequestHandler(passwordAuth));
                             }
-                            ch.pipeline().addLast(new Socks5CommandRequestDecoder())
+                            ch.pipeline().addLast(new Socks5CommandRequestDecoder(Socks5AddressUtil.DEFAULT_DECODER))
                                     .addLast(new NetShellAloneHandler(bondQueue));
                         }
                     });

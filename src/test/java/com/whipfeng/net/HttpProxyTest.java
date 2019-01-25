@@ -11,13 +11,8 @@ public class HttpProxyTest {
 
     @Test
     public void testHttpProxyServer() throws Exception {
-        int port = 8088;
-        HttpProxyServer httpProxyServer = new HttpProxyServer(port, new PasswordAuth() {
-            @Override
-            public String findPassword(String user) throws Exception {
-                return "123";
-            }
-        });
+        int port = 8580;
+        HttpProxyServer httpProxyServer = new HttpProxyServer(port, null);
         httpProxyServer.run();
     }
 }

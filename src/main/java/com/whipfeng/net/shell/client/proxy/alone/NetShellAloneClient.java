@@ -2,6 +2,7 @@ package com.whipfeng.net.shell.client.proxy.alone;
 
 import com.whipfeng.net.heart.CustomHeartbeatEncoder;
 import com.whipfeng.net.shell.client.proxy.NetShellProxyClientDecoder;
+import com.whipfeng.util.Socks5AddressUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -65,7 +66,7 @@ public class NetShellAloneClient {
                         .handler(new ChannelInitializer<SocketChannel>() {
                             public void initChannel(SocketChannel ch) throws Exception {
                                 ch.pipeline()
-                                        .addLast(Socks5ClientEncoder.DEFAULT)
+                                        .addLast(new Socks5ClientEncoder(Socks5AddressUtil.DEFAULT_ENCODER))
                                         .addLast(new Socks5InitialResponseDecoder())
                                         .addLast(new Socks5InitialResponseHandler(username, password));
 

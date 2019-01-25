@@ -1,5 +1,6 @@
 package com.whipfeng.net.shell.server.proxy;
 
+import com.whipfeng.util.RSAUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.socksx.SocksVersion;
@@ -30,6 +31,12 @@ public class Socks5InitialRequestHandler extends SimpleChannelInboundHandler<Def
     protected void channelRead0(ChannelHandlerContext ctx, DefaultSocks5InitialRequest msg) throws Exception {
         logger.debug("Init SOCKS5:" + msg);
         if (msg.decoderResult().isSuccess() && SocksVersion.SOCKS5.equals(msg.version())) {
+            if (msg.authMethods().contains(Socks5AuthMethod.GSSAPI) && !RSAUtil.noPrivateKey()) {
+                Socks5InitialResponse initialResponse = new DefaultSocks5InitialResponse(Socks5AuthMethod.GSSAPI);
+                ctx.writeAndFlush(initialResponse);
+                ctx.pipeline().remove(Socks5PasswordAuthRequestDecoder.class);
+                return;
+            }
             if (isNeedAuth && msg.authMethods().contains(Socks5AuthMethod.PASSWORD)) {
                 Socks5InitialResponse initialResponse = new DefaultSocks5InitialResponse(Socks5AuthMethod.PASSWORD);
                 ctx.writeAndFlush(initialResponse);

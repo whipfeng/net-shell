@@ -11,6 +11,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,7 @@ public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
             }
             //获取主机名和端口
             final int inPort = ((255 & buf[0]) << 8) | (255 & buf[1]);
-            final String inHost = new String(buf, 2, len - 2, "UTF-8");
+            final String inHost = new String(buf, 2, len - 2, CharsetUtil.UTF_8);
 
             boolean result = blockingQueue.remove(this);
             logger.info(result + " Connect Request(P):" + inHost + ":" + inPort + nsCtx);
@@ -138,7 +139,7 @@ public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
         isV2 = true;
         out.writeByte(PW_EX_REQ_MSG_V2);
         out.writeBytes(key);
-        ctx.writeAndFlush(out);
+        ctx.pipeline().context(this).writeAndFlush(out);
     }
 
     private void sendPreMsg(ChannelHandlerContext ctx) {
@@ -148,7 +149,7 @@ public class NetShellProxyClientDecoder extends CustomHeartbeatDecoder {
         out.writeByte(CONN_PRE_MSG);
         out.writeInt(networkCode);
         out.writeInt(subMaskCode);
-        ctx.writeAndFlush(out);
+        ctx.pipeline().context(this).writeAndFlush(out);
     }
 
 

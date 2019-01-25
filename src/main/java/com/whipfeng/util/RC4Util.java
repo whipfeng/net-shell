@@ -63,4 +63,25 @@ public class RC4Util {
             buf[i] = (byte) (buf[i] ^ k[xorIdx]);
         }
     }
+
+    private int x = 0;
+    private int y = 0;
+    private byte[] k;
+
+    public RC4Util(byte[] key) {
+        k = initKey(key);
+    }
+
+    public void transfer(ByteBuf buf) {
+        int xorIdx;
+        for (int i = buf.readerIndex(); i < buf.writerIndex(); i++) {
+            x = (x + 1) & 0xff;
+            y = ((k[x] & 0xff) + y) & 0xff;
+            byte tmp = k[x];
+            k[x] = k[y];
+            k[y] = tmp;
+            xorIdx = ((k[x] & 0xff) + (k[y] & 0xff)) & 0xff;
+            buf.setByte(i, buf.getByte(i) ^ k[xorIdx]);
+        }
+    }
 }

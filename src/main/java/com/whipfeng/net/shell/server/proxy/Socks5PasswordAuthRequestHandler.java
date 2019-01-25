@@ -41,4 +41,8 @@ public class Socks5PasswordAuthRequestHandler extends SimpleChannelInboundHandle
         }
         ctx.close();
     }
+
+    public PasswordAuth getPasswordAuth() {
+        return passwordAuth;
+    }
 }

@@ -22,6 +22,13 @@ public class MsgExchangeHandler extends ChannelInboundHandlerAdapter {
         this.channel = channel;
     }
 
+    private volatile boolean needLog = false;
+
+    public MsgExchangeHandler(Channel channel, boolean needLog) {
+        this.channel = channel;
+        this.needLog = needLog;
+    }
+
     public MsgExchangeHandler(Channel channel, Object attach) {
         this.channel = channel;
         this.attach = attach;
@@ -46,13 +53,21 @@ public class MsgExchangeHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         logger.info("Disconnect OK:" + ctx);
+        ifNeedLog(ctx);
         channel.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         logger.info("Disconnect forced:" + ctx, cause);
+        ifNeedLog(ctx);
         channel.close();
         ctx.close();
+    }
+
+    public void ifNeedLog(ChannelHandlerContext ctx) {
+        if (needLog) {
+            logger.warn("Will logging:" + ctx);
+        }
     }
 }

@@ -24,19 +24,23 @@ public class RC4Transfer {
     public ChannelHandler[] getIOHandlers() {
         ChannelHandler[] ioHandlers = new ChannelHandler[2];
         ioHandlers[0] = new ChannelInboundHandlerAdapter() {
+            private RC4Util rc4Util = new RC4Util(RC4Transfer.this.secretKey);
+
             @Override
             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                 if (msg instanceof ByteBuf) {
-                    RC4Util.transfer(RC4Transfer.this.secretKey, (ByteBuf) msg);
+                    rc4Util.transfer((ByteBuf) msg);
                 }
                 ctx.fireChannelRead(msg);
             }
         };
         ioHandlers[1] = new ChannelOutboundHandlerAdapter() {
+            private RC4Util rc4Util = new RC4Util(RC4Transfer.this.secretKey);
+
             @Override
             public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
                 if (msg instanceof ByteBuf) {
-                    RC4Util.transfer(RC4Transfer.this.secretKey, (ByteBuf) msg);
+                    rc4Util.transfer((ByteBuf) msg);
                 }
                 ctx.write(msg, promise);
             }

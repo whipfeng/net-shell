@@ -1,6 +1,8 @@
 package com.whipfeng.net.shell.transfer.proxy;
 
 import com.whipfeng.net.shell.MsgExchangeHandler;
+import com.whipfeng.util.RSAUtil;
+import com.whipfeng.util.Socks5AddressUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
@@ -44,14 +46,14 @@ public class NetShellProxyTransferHandler extends ChannelInboundHandlerAdapter {
                 .handler(new ChannelInitializer<SocketChannel>() {
                     public void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline()
-                                .addLast(Socks5ClientEncoder.DEFAULT)
+                                .addLast(new Socks5ClientEncoder(Socks5AddressUtil.DEFAULT_ENCODER))
                                 .addLast(new Socks5InitialResponseDecoder())
                                 .addLast(new Socks5InitialResponseHandler(username, password, dstHost, dstPort))
                                 .addLast(new Socks5PasswordAuthResponseDecoder())
                                 .addLast(new Socks5PasswordAuthResponseHandler(dstHost, dstPort))
                                 .addLast(new Socks5CommandResponseDecoder())
                                 .addLast(new Socks5CommandResponseHandler())
-                                .addLast(new MsgExchangeHandler(tsfCtx.channel()));
+                                .addLast("M-E-H", new MsgExchangeHandler(tsfCtx.channel()));
                     }
                 });
         ChannelFuture proxyFuture = proxyBootstrap.remoteAddress(proxyHost, proxyPort).connect();
@@ -67,7 +69,8 @@ public class NetShellProxyTransferHandler extends ChannelInboundHandlerAdapter {
 
                     tsfCtx.pipeline().addLast(new MsgExchangeHandler(proxyChannel));
 
-                    Socks5InitialRequest initMsg = new DefaultSocks5InitialRequest(Socks5AuthMethod.PASSWORD);
+                    Socks5InitialRequest initMsg = new DefaultSocks5InitialRequest(
+                            RSAUtil.noPublicKey() ? Socks5AuthMethod.PASSWORD : Socks5AuthMethod.GSSAPI, Socks5AuthMethod.PASSWORD);
                     proxyChannel.writeAndFlush(initMsg);
                     //如果代理网络已经挂了，则直接关闭外部网络
                     if (!tsfChannel.isActive()) {

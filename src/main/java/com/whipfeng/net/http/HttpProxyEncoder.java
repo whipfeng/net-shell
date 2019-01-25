@@ -17,7 +17,7 @@ public class HttpProxyEncoder extends MessageToByteEncoder<HttpProxyResponse> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, HttpProxyResponse response, ByteBuf out) throws Exception {
-        logger.info("Http response." + ctx);
+        logger.info("Http response:" + response + ctx );
         out.writeBytes(response.getAck());
     }
 }

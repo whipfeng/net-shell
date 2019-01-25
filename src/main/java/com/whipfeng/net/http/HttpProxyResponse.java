@@ -1,6 +1,6 @@
 package com.whipfeng.net.http;
 
-import java.nio.charset.Charset;
+import io.netty.util.CharsetUtil;
 
 /**
  * Created by cmll on 2019/1/4.
@@ -17,7 +17,7 @@ public class HttpProxyResponse {
         String basicAuth = version + " 407 Unauthorized\r\n" +
                 "Proxy-Authenticate: Basic realm=\"Net-Shell-Auth\"\r\n" +
                 "Content-Type: text/html;charset=utf-8\r\n" +
-                "Content-Length: " + html.getBytes(Charset.forName("UTF-8")).length + "\r\n" +
+                "Content-Length: " + html.getBytes(CharsetUtil.UTF_8).length + "\r\n" +
                 "Proxy-Connection: " + (isKeepAlive ? "keep-alive" : "close") + "\r\n" +
                 "\r\n" + html;
         return buildResponse(basicAuth);
@@ -27,14 +27,14 @@ public class HttpProxyResponse {
         String digestAuth = version + " 407 Unauthorized\r\n" +
                 "Proxy-Authenticate: Digest realm=\"Net-Shell-Auth\", nonce=\"" + nonce + "\", stale=\"" + stale + "\"\r\n" +
                 "Content-Type: text/html;charset=utf-8\r\n" +
-                "Content-Length: " + html.getBytes(Charset.forName("UTF-8")).length + "\r\n" +
+                "Content-Length: " + html.getBytes(CharsetUtil.UTF_8).length + "\r\n" +
                 "Proxy-Connection: " + (isKeepAlive ? "keep-alive" : "close") + "\r\n" +
                 "\r\n" + html;
         return buildResponse(digestAuth);
     }
 
     public static HttpProxyResponse buildResponse(String respStr) {
-        return new HttpProxyResponse(respStr.getBytes(Charset.forName("UTF-8")));
+        return new HttpProxyResponse(respStr.getBytes(CharsetUtil.UTF_8));
     }
 
     private byte[] ack;

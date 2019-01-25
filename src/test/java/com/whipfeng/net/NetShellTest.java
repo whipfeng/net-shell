@@ -1,5 +1,6 @@
 package com.whipfeng.net;
 
+import com.whipfeng.net.shell.ContextRouter;
 import com.whipfeng.net.shell.client.NetShellClient;
 import com.whipfeng.net.shell.client.proxy.NetShellProxyClient;
 import com.whipfeng.net.shell.client.proxy.alone.NetShellAloneClient;
@@ -104,13 +105,14 @@ public class NetShellTest {
 
     @Test
     public void testNetShellProxyTransfer() throws Exception {
-        int tsfPort = 9099;
+        RSAUtil.initPublicKey("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCNdyfwARSiaNobJS8hC6q00kRcWChzbB3HWrt340h-OHB9oFGtMg9Ih0d81gPAtZ3wB8t1czGAppA90aBelmGTmnAEC2NX5mL0dCaXglm9zjvwCRtXcHLlpiplw56erKSeNtYKpoUukkJi76xJXLqNntywWahu93p7LORPURLOmwIDAQAB");
+        int tsfPort = 33388;
         String proxyHost = "localhost";
         int proxyPort = 8088;
-        String username = "xxx";
-        String password = "xxx";
-        String dstHost = "localhost";
-        int dstPort = 3306;
+        String username = "migu_log";
+        String password = "migu_log123!";
+        String dstHost = "localhost.111.pc";
+        int dstPort = 8580;
 
         NetShellProxyTransfer netShellProxyTransfer = new NetShellProxyTransfer(tsfPort, proxyHost, proxyPort, username, password, dstHost, dstPort);
         netShellProxyTransfer.run();

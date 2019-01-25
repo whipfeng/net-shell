@@ -1,6 +1,7 @@
 package com.whipfeng.net.shell.server.proxy;
 
 import com.whipfeng.net.heart.CustomHeartbeatEncoder;
+import com.whipfeng.util.Socks5AddressUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -64,14 +65,14 @@ public class NetShellProxyServer {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline()
-                                    .addLast(Socks5ServerEncoder.DEFAULT)
+                                    .addLast(new Socks5ServerEncoder(Socks5AddressUtil.DEFAULT_ENCODER))
                                     .addLast(new Socks5InitialRequestDecoder())
                                     .addLast(new Socks5InitialRequestHandler(isNeedAuth));
                             if (isNeedAuth) {
                                 ch.pipeline().addLast(new Socks5PasswordAuthRequestDecoder())
                                         .addLast(new Socks5PasswordAuthRequestHandler(passwordAuth));
                             }
-                            ch.pipeline().addLast(new Socks5CommandRequestDecoder())
+                            ch.pipeline().addLast(new Socks5CommandRequestDecoder(Socks5AddressUtil.DEFAULT_DECODER))
                                     .addLast(new Socks5CommandRequestHandler(bondQueue));
                         }
                     });

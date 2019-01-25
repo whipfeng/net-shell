@@ -12,10 +12,9 @@ import com.whipfeng.util.RSAUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.socksx.v5.*;
+import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.charset.Charset;
 
 /**
  * 网络外壳代理端编解码器
@@ -120,17 +119,17 @@ public class NetShellProxyServerDecoder extends CustomHeartbeatDecoder {
 
         String inHost = commandRequest.dstAddr();
         int inPort = commandRequest.dstPort();
-        byte[] buf = inHost.getBytes(Charset.forName("UTF-8"));
-        ByteBuf out = nsCtx.alloc().buffer(CustomHeartbeatConst.HEAD_LEN + 2 + buf.length);
-        out.writeInt(2 + buf.length);
-        out.writeByte(CONN_REQ_MSG);
-        out.writeByte((inPort >>> 8) & 255);
-        out.writeByte(inPort & 255);
-        out.writeBytes(buf);
+        byte[] hBuf = inHost.getBytes(CharsetUtil.UTF_8);
+        ByteBuf nsBuf = nsCtx.alloc().buffer(CustomHeartbeatConst.HEAD_LEN + 2 + hBuf.length);
+        nsBuf.writeInt(2 + hBuf.length);
+        nsBuf.writeByte(CONN_REQ_MSG);
+        nsBuf.writeByte((inPort >>> 8) & 255);
+        nsBuf.writeByte(inPort & 255);
+        nsBuf.writeBytes(hBuf);
         if (isV2) {
-            int startIdx = out.readerIndex() + CustomHeartbeatConst.HEAD_LEN;
-            RC4Util.transfer(this.secretKey, out, startIdx, startIdx + 2 + buf.length);
+            int startIdx = nsBuf.readerIndex() + CustomHeartbeatConst.HEAD_LEN;
+            RC4Util.transfer(this.secretKey, nsBuf, startIdx, startIdx + 2 + hBuf.length);
         }
-        return nsRouter.getCtx().writeAndFlush(out);
+        return nsRouter.getCtx().pipeline().context(this).writeAndFlush(nsBuf);
     }
 }

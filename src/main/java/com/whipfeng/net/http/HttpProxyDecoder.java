@@ -153,106 +153,111 @@ public class HttpProxyDecoder extends ReplayingDecoder<HttpProxyDecoder.State> {
                     request.setPort(Integer.parseInt(hostAndPort[1]));
                 }
 
-                String proxyAuth = request.getHeader("Proxy-Authorization");
-                if (null != proxyAuth) {
-                    if (proxyAuth.startsWith("Digest ")) {
-                        HttpProxyRequest.DigestAuth auth = request.new DigestAuth();
-                        request.setAuth(auth);
-                        String[] proxyAuthSplit = proxyAuth.substring(7, proxyAuth.length() - 1).split("\", ");
-                        for (String authParam : proxyAuthSplit) {
-                            String[] authParamSplit = authParam.split("=\"", -1);
-                            auth.putParam(authParamSplit[0], authParamSplit[1]);
-                        }
-                        auth.setNonce(auth.getParam("nonce"));
-                        auth.setNc(auth.getParam("nc"));
-                        auth.setOpaque(auth.getParam("opaque"));
-                        auth.setQop(auth.getParam("qop"));
-                        auth.setRealm(auth.getParam("realm"));
-                        auth.setResponse(auth.getParam("response"));
-                        auth.setUri(auth.getParam("uri"));
-                        auth.setUserName(auth.getParam("username"));
-                        auth.setMethod(request.getMethod());
-                    } else {
-                        HttpProxyRequest.BasicAuth auth = request.new BasicAuth(proxyAuth.substring(6));
-                        request.setAuth(auth);
-                    }
-                }
+                byte[] reqMethod = reqMethods.get(0);
 
-                boolean passAuth = true;
-                boolean stale = true;
-                HttpProxyRequest.Auth auth = request.getAuth();
-                if (null == auth || !(auth instanceof HttpProxyRequest.DigestAuth)) {
-                    passAuth = false;
-                    stale = false;
-                }
-                if (passAuth) {
-                    HttpProxyRequest.DigestAuth digestAuth = (HttpProxyRequest.DigestAuth) auth;
-                    try {
-                        long oldNonce = Long.parseLong(digestAuth.getNonce());
-                        long nonce = System.currentTimeMillis();
-                        //一秒换一次
-                        if (nonce - oldNonce > 1000) {
-                            passAuth = false;
-                            stale = true;
+                //如果需要校验授权
+                if (null != this.passwordAuth) {
+                    String proxyAuth = request.getHeader("Proxy-Authorization");
+                    if (null != proxyAuth) {
+                        if (proxyAuth.startsWith("Digest ")) {
+                            HttpProxyRequest.DigestAuth auth = request.new DigestAuth();
+                            request.setAuth(auth);
+                            String[] proxyAuthSplit = proxyAuth.substring(7, proxyAuth.length() - 1).split("\", ");
+                            for (String authParam : proxyAuthSplit) {
+                                String[] authParamSplit = authParam.split("=\"", -1);
+                                auth.putParam(authParamSplit[0], authParamSplit[1]);
+                            }
+                            auth.setNonce(auth.getParam("nonce"));
+                            auth.setNc(auth.getParam("nc"));
+                            auth.setOpaque(auth.getParam("opaque"));
+                            auth.setQop(auth.getParam("qop"));
+                            auth.setRealm(auth.getParam("realm"));
+                            auth.setResponse(auth.getParam("response"));
+                            auth.setUri(auth.getParam("uri"));
+                            auth.setUserName(auth.getParam("username"));
+                            auth.setMethod(request.getMethod());
+                        } else {
+                            HttpProxyRequest.BasicAuth auth = request.new BasicAuth(proxyAuth.substring(6));
+                            request.setAuth(auth);
                         }
-                    } catch (NumberFormatException nfe) {
+                    }
+
+                    boolean passAuth = true;
+                    boolean stale = true;
+                    HttpProxyRequest.Auth auth = request.getAuth();
+                    if (null == auth || !(auth instanceof HttpProxyRequest.DigestAuth)) {
                         passAuth = false;
                         stale = false;
                     }
-                }
-                if (passAuth) {
-                    HttpProxyRequest.DigestAuth digestAuth = (HttpProxyRequest.DigestAuth) auth;
-                    String password = passwordAuth.findPassword(digestAuth.getUserName());
-                    if (password == null) {
-                        passAuth = false;
-                        stale = false;
-                    } else {
-                        String A1 = DigestUtils.md5Hex(digestAuth.getUserName() + ':' + digestAuth.getRealm() + ':' + password);
-                        String A2 = DigestUtils.md5Hex(request.getMethod() + ':' + digestAuth.getUri());
-                        String response = DigestUtils.md5Hex(A1 + ':' + digestAuth.getNonce() + ':' + A2);
-                        if (!response.equals(digestAuth.getResponse())) {
+                    if (passAuth) {
+                        HttpProxyRequest.DigestAuth digestAuth = (HttpProxyRequest.DigestAuth) auth;
+                        try {
+                            long oldNonce = Long.parseLong(digestAuth.getNonce());
+                            long nonce = System.currentTimeMillis();
+                            //一秒换一次
+                            if (nonce - oldNonce > 1000) {
+                                passAuth = false;
+                                stale = true;
+                            }
+                        } catch (NumberFormatException nfe) {
                             passAuth = false;
                             stale = false;
                         }
                     }
-                }
-                byte[] reqMethod = reqMethods.get(0);
-                if (!passAuth) {
-                    String version = request.getVersion();
-                    String pc = request.getHeader("Proxy-Connection");
-                    String te = request.getHeader("Transfer-Encoding");
-                    String cl = request.getHeader("Content-Length");
-                    boolean isKeepAlive = (("HTTP/1.1".equals(version) && !"close".equals(pc)) || ("HTTP/1.0".equals(version) && "keep-alive".equals(pc)))
-                            && ((METHOD_POST != reqMethod && METHOD_PUT != reqMethod) || "chunked".equals(te) || null != cl);
-                    ChannelFuture respFuture = ctx.writeAndFlush(HttpProxyResponse.buildDigestAuthResponse(version, "Net-Shell need auth!", isKeepAlive, System.currentTimeMillis(), stale));
-                    if (!isKeepAlive) {
-                        respFuture.addListener(ChannelFutureListener.CLOSE);
-                        return;
-                    }
-                    if (METHOD_POST == reqMethod || METHOD_PUT == reqMethod) {
-                        if ("chunked".equals(te)) {
-                            logger.warn("Have chunked entry." + request + ctx);
-                            idx = 0;
-                            for (; ; ) {
-                                buf[idx] = in.readByte();
-                                if ('\n' == buf[idx] && '\r' == buf[idx - 1]) {
-                                    int chunkedLen = Integer.parseInt(new String(buf, 0, idx - 1), 16);
-                                    in.skipBytes(chunkedLen + 2);
-                                    if (chunkedLen == 0) {
-                                        break;
-                                    }
-                                    idx = 0;
-                                } else {
-                                    idx++;
-                                }
-                            }
+                    if (passAuth) {
+                        HttpProxyRequest.DigestAuth digestAuth = (HttpProxyRequest.DigestAuth) auth;
+                        String password = passwordAuth.findPassword(digestAuth.getUserName());
+                        if (password == null) {
+                            passAuth = false;
+                            stale = false;
                         } else {
-                            int contentLen = Integer.parseInt(cl);
-                            in.skipBytes(contentLen);
+                            String A1 = DigestUtils.md5Hex(digestAuth.getUserName() + ':' + digestAuth.getRealm() + ':' + password);
+                            String A2 = DigestUtils.md5Hex(request.getMethod() + ':' + digestAuth.getUri());
+                            String response = DigestUtils.md5Hex(A1 + ':' + digestAuth.getNonce() + ':' + A2);
+                            if (!response.equals(digestAuth.getResponse())) {
+                                passAuth = false;
+                                stale = false;
+                            }
                         }
                     }
-                    checkpoint(State.METHOD);
-                    return;
+
+                    if (!passAuth) {
+                        String version = request.getVersion();
+                        String pc = request.getHeader("Proxy-Connection");
+                        String te = request.getHeader("Transfer-Encoding");
+                        String cl = request.getHeader("Content-Length");
+                        boolean isKeepAlive = (("HTTP/1.1".equals(version) && !"close".equals(pc)) || ("HTTP/1.0".equals(version) && "keep-alive".equals(pc)))
+                                && ((METHOD_POST != reqMethod && METHOD_PUT != reqMethod) || "chunked".equals(te) || null != cl);
+                        ChannelFuture respFuture = ctx.writeAndFlush(HttpProxyResponse.buildDigestAuthResponse(version, "Net-Shell need auth!", isKeepAlive, System.currentTimeMillis(), stale));
+                        if (!isKeepAlive) {
+                            respFuture.addListener(ChannelFutureListener.CLOSE);
+                            return;
+                        }
+                        if (METHOD_POST == reqMethod || METHOD_PUT == reqMethod) {
+                            if ("chunked".equals(te)) {
+                                logger.warn("Have chunked entry." + request + ctx);
+                                idx = 0;
+                                for (; ; ) {
+                                    buf[idx] = in.readByte();
+                                    if ('\n' == buf[idx] && '\r' == buf[idx - 1]) {
+                                        int chunkedLen = Integer.parseInt(new String(buf, 0, idx - 1), 16);
+                                        in.skipBytes(chunkedLen + 2);
+                                        if (chunkedLen == 0) {
+                                            break;
+                                        }
+                                        idx = 0;
+                                    } else {
+                                        idx++;
+                                    }
+                                }
+                            } else {
+                                int contentLen = Integer.parseInt(cl);
+                                in.skipBytes(contentLen);
+                            }
+                        }
+                        checkpoint(State.METHOD);
+                        return;
+                    }
                 }
 
                 ctx.channel().config().setAutoRead(false);
